@@ -23,7 +23,7 @@
 #define SD_MOSI 27
 #define SD_SCK 26
 #define SD_CS 29
-#define SD_BAUD 25 * 1000000
+#define SD_BAUD 45 * 1000000
 
 #define DISPLAY_WIDTH 128
 #define DISPLAY_HEIGHT 64

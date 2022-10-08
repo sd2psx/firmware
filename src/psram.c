@@ -94,6 +94,29 @@ static void psram_run_tests(void) {
         1000000.0 * (NUM_TESTS * TEST_CYCLES * TEST_BLOCK_SIZE * 2) / (end - start) / 1024);
 }
 
+void psram_read(uint32_t addr, uint8_t *buf, size_t sz) {
+    uint8_t cmd_read[4] = { 0xEB, (addr & 0xFF0000) >> 16, (addr & 0xFF00) >> 8, (addr & 0xFF) };
+    uint8_t tmpbuf[4 + 512];
+    SPI_OP(pio_qspi_write8_read8_blocking(&spi, cmd_read, sizeof(cmd_read), tmpbuf, sizeof(tmpbuf)));
+    memcpy(buf, tmpbuf+4, sz);
+}
+
+void __time_critical_func(psram_read_dma)(uint32_t addr, uint8_t *buf, size_t sz) {
+    uint8_t cmd_read[4] = { 0xEB, (addr & 0xFF0000) >> 16, (addr & 0xFF00) >> 8, (addr & 0xFF) };
+    gpio_put(spi.cs_pin, 0);
+    pio_qspi_write8_read8_dma(&spi, cmd_read, sizeof(cmd_read), buf, sz);
+}
+
+void __time_critical_func(psram_write)(uint32_t addr, uint8_t *buf, size_t sz) {
+    uint8_t cmd_write[4 + 512];
+    cmd_write[0] = 0x38;
+    cmd_write[1] = (addr & 0xFF0000) >> 16;
+    cmd_write[2] = (addr & 0xFF00) >> 8;
+    cmd_write[3] = (addr & 0xFF);
+    memcpy(cmd_write + 4, buf, sz);
+    SPI_OP(pio_qspi_write8_read8_blocking(&spi, cmd_write, 4 + sz, NULL, 0));
+}
+
 void psram_init(void) {
     uint32_t offset;
 
@@ -120,7 +143,15 @@ void psram_init(void) {
     pio_remove_program(spi.pio, &spi_cpha0_program, offset);
     offset = pio_add_program(spi.pio, &qspi_cpha0_program);
     pio_qspi_init(spi.pio, spi.sm, offset, 8, PSRAM_CLKDIV, 0, 0, PSRAM_CLK, PSRAM_DAT);
+    pio_qspi_dma_init(&spi);
 
     /* validate PSRAM is working properly */
     psram_run_tests();
+
+    /* and erase everything to 0xFF */
+    uint8_t erasebuf[512];
+    memset(erasebuf, 0xFF, sizeof(erasebuf));
+    for (int i = 0; i < 8 * 1024 * 1024; i += 512) {
+        psram_write(i, erasebuf, sizeof(erasebuf));
+    }
 }

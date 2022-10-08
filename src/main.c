@@ -3,6 +3,7 @@
 #include "pico/bootrom.h"
 #include "hardware/gpio.h"
 #include "hardware/clocks.h"
+#include "hardware/vreg.h"
 
 #include "memory_card.h"
 #include "gui.h"
@@ -35,29 +36,44 @@ static void debug_task(void) {
     }
 }
 
+static void __time_critical_func(nothing)(void) {
+    while (1) {}
+}
+
 int main() {
+    input_init();
+    check_bootloader_reset();
+
     stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
 
-    // printf("prepare...\n");
-    // set_sys_clock_khz(270000, true);
+    printf("prepare...\n");
+    // set_sys_clock_khz(133000, true);
+    int mhz = 240;
+    set_sys_clock_khz(mhz * 1000, true);
+    clock_configure(clk_peri, 0, CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLK_SYS, mhz * 1000000, mhz * 1000000);
+    // set_sys_clock_khz(340000, true);
+    // vreg_set_voltage(VREG_VOLTAGE_1_25);
+    // sleep_ms(10);
+    // set_sys_clock_khz(400000, true);
+    // set_sys_clock_khz(300000, true);
+
     // sleep_ms(50);
-    // stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
+    stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
     // sleep_ms(50);
 
     printf("\n\n\nStarted! Clock %d\n", clock_get_hz(clk_sys));
 
-    input_init();
-    check_bootloader_reset();
-
-    // psram_init();
-    // sd_init();
-    gui_init();
+    psram_init();
+    sd_init();
+    dirty_init();
+    // gui_init();
 
     multicore_launch_core1(memory_card_main);
 
     while (1) {
         debug_task();
-        gui_task();
-        input_task();
+        dirty_task();
+        // gui_task();
+        // input_task();
     }
 }

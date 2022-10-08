@@ -6,37 +6,82 @@ include(pico_sdk_import.cmake)
 project(pico_examples C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+# set(PICO_COPY_TO_RAM 1)
 
 pico_sdk_init()
 
 set(LV_CONF_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/lv_conf.h CACHE STRING "" FORCE)
 add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
-add_subdirectory(ext/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI EXCLUDE_FROM_ALL)
 
 add_executable(sd2psx
     src/main.c
     src/memory_card.c
     src/debug.c
-    src/tonyhax.c
     src/gui.c
     src/input.c
     src/pio_spi.c
     src/psram.c
-    src/sd.c
-    src/sd_hw_config.c
     src/ui_menu.c
     src/ui_theme_mono.c
+    src/keys.c
+    src/des.c
+    src/dirty.c
+
+    src/arduino_wrapper/sd.cpp
+    src/arduino_wrapper/SPI.cpp
 
     ext/pico-ssd1306/ssd1306.c
+
+    ext/ESP8266SdFat/src/common/FmtNumber.cpp
+    ext/ESP8266SdFat/src/common/FsCache.cpp
+    ext/ESP8266SdFat/src/common/FsDateTime.cpp
+    ext/ESP8266SdFat/src/common/FsName.cpp
+    ext/ESP8266SdFat/src/common/FsStructs.cpp
+    ext/ESP8266SdFat/src/common/FsUtf.cpp
+    ext/ESP8266SdFat/src/common/upcase.cpp
+    ext/ESP8266SdFat/src/ExFatLib/ExFatDbg.cpp
+    ext/ESP8266SdFat/src/ExFatLib/ExFatFile.cpp
+    ext/ESP8266SdFat/src/ExFatLib/ExFatFilePrint.cpp
+    ext/ESP8266SdFat/src/ExFatLib/ExFatFileWrite.cpp
+    ext/ESP8266SdFat/src/ExFatLib/ExFatFormatter.cpp
+    ext/ESP8266SdFat/src/ExFatLib/ExFatName.cpp
+    ext/ESP8266SdFat/src/ExFatLib/ExFatPartition.cpp
+    ext/ESP8266SdFat/src/ExFatLib/ExFatVolume.cpp
+    ext/ESP8266SdFat/src/FatLib/FatDbg.cpp
+    ext/ESP8266SdFat/src/FatLib/FatFile.cpp
+    ext/ESP8266SdFat/src/FatLib/FatFileLFN.cpp
+    ext/ESP8266SdFat/src/FatLib/FatFilePrint.cpp
+    ext/ESP8266SdFat/src/FatLib/FatFileSFN.cpp
+    ext/ESP8266SdFat/src/FatLib/FatFormatter.cpp
+    ext/ESP8266SdFat/src/FatLib/FatName.cpp
+    ext/ESP8266SdFat/src/FatLib/FatPartition.cpp
+    ext/ESP8266SdFat/src/FatLib/FatVolume.cpp
+    ext/ESP8266SdFat/src/FreeStack.cpp
+    ext/ESP8266SdFat/src/FsLib/FsFile.cpp
+    ext/ESP8266SdFat/src/FsLib/FsNew.cpp
+    ext/ESP8266SdFat/src/FsLib/FsVolume.cpp
+    ext/ESP8266SdFat/src/iostream/istream.cpp
+    ext/ESP8266SdFat/src/iostream/ostream.cpp
+    ext/ESP8266SdFat/src/iostream/StdioStream.cpp
+    ext/ESP8266SdFat/src/iostream/StreamBaseClass.cpp
+    ext/ESP8266SdFat/src/MinimumSerial.cpp
+    ext/ESP8266SdFat/src/SdCard/SdCardInfo.cpp
+    ext/ESP8266SdFat/src/SdCard/SdSpiCard.cpp
 )
 
 target_compile_definitions(
     sd2psx PUBLIC
     PICO_XOSC_STARTUP_DELAY_MULTIPLIER=64
+    PICO_FLASH_SIZE_BYTES=16777216
+    USE_SPI_ARRAY_TRANSFER=1
 )
 
 target_include_directories(sd2psx PUBLIC
+    src/arduino_wrapper
+
     ext/pico-ssd1306
+    ext/ESP8266SdFat/src
+    ext/ESP8266SdFat/extras/attic
 )
 
 pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/psx_spi.pio)
@@ -46,9 +91,11 @@ target_link_libraries(sd2psx
     pico_stdlib
     pico_multicore
     hardware_pio
+    hardware_spi
     hardware_i2c
+    hardware_flash
+    hardware_dma
     lvgl::lvgl
-    FatFs_SPI
 )
 
 pico_add_extra_outputs(sd2psx)

@@ -1,18 +1,15 @@
 #include <stdio.h>
+#include <inttypes.h>
 
-#include "f_util.h"
-#include "ff.h"
 #include "pico/stdlib.h"
-#include "rtc.h"
-
-#include "hw_config.h"
-
-char buf[4096];
 
 #define CYCLES 1000
 
+// FIL f_memcard;
+
 void sd_init(void) {
     printf("SD init!\n");
+#if 0
 
     sd_card_t *sd = sd_get_by_num(0);
     FRESULT ret = f_mount(&sd->fatfs, sd->pcName, 1);
@@ -20,10 +17,36 @@ void sd_init(void) {
         panic("f_mount error: %s (%d)\n", FRESULT_str(ret), ret);
 
     // FIL fp;
-    // ret = f_open(&fp, "kernel8.img", FA_READ);
-    // if (ret != FR_OK)
-    //     fatal("cannot open");
+    ret = f_open(&f_memcard, "CARD.BIN", FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+    if (ret != FR_OK)
+        fatal("cannot open");
 
+    if (f_size(&f_memcard) != 8 * 1024 * 1024) {
+        printf("creating new card!! because old size = %d\n", f_size(&f_memcard));
+        if (f_truncate(&f_memcard) != FR_OK)
+            fatal("cannot truncate");
+        if (f_expand(&f_memcard, 8 * 1024 * 1024, 1) != FR_OK)
+            fatal("cannot make memcard");
+    } else {
+        printf("card OK - reusing it\n");
+    }
+    f_sync(&f_memcard);
+
+    /* now read the memcard into psram */
+    printf("reading memcard... ");
+    uint64_t start = time_us_64();
+    static uint8_t buf[4096];
+    for (int pos = 0; pos < 8 * 1024 * 1024; pos += sizeof(buf)) {
+        UINT read = 0;
+        ret = f_read(&f_memcard, buf, sizeof(buf), &read);
+        if (ret != FR_OK || read != sizeof(buf))
+            fatal("cannot read");
+        // for (int i = 0; i < 4096; i += 512)
+        //     psram_write(pos, buf + i, 512);
+    }
+    uint64_t end = time_us_64();
+    printf("OK! - took %d ms - %.2f kB/s\n", (int)((end - start) / 1000), (8.0 * 1024 * 1000000) / (end - start));
+#endif
     // uint32_t total = 0;
 
     // uint64_t start = time_us_64();

@@ -1,10 +1,17 @@
 #include "hardware/gpio.h"
 #include "hardware/timer.h"
+#include "hardware/flash.h"
+#include "hardware/dma.h"
 #include "pico/platform.h"
 
 #include "config.h"
 #include "psx_spi.pio.h"
 #include "debug.h"
+#include "keys.h"
+#include "des.h"
+#include "dirty.h"
+
+#include <string.h>
 
 uint64_t us_startup;
 
@@ -18,22 +25,45 @@ typedef struct {
     uint32_t sm;
 } pio_t;
 
-pio_t cmd_reader, dat_writer;
-extern char tonyhax[];
+pio_t cmd_reader, dat_writer, dat_writer_slow, clock_probe;
+
+#define ERASE_SECTORS 16
+#define CARD_SIZE (8 * 1024 * 1024)
+
+uint8_t term = 0xFF;
+uint32_t read_sector, write_sector, erase_sector;
+struct {
+    uint32_t prefix;
+    uint8_t buf[528];
+} readtmp;
+uint8_t *eccptr;
+uint8_t writetmp[528];
+int is_write, is_dma_read;
+uint32_t readptr, writeptr;
+
+static inline void __time_critical_func(RAM_pio_sm_drain_tx_fifo)(PIO pio, uint sm) {
+    uint instr = (pio->sm[sm].shiftctrl & PIO_SM0_SHIFTCTRL_AUTOPULL_BITS) ? pio_encode_out(pio_null, 32) :
+                 pio_encode_pull(false, false);
+    while (!pio_sm_is_tx_fifo_empty(pio, sm)) {
+        pio_sm_exec(pio, sm, instr);
+    }
+}
 
 static void __time_critical_func(reset_pio)(void) {
-    // debug_printf("!!\n");
-
-    pio_set_sm_mask_enabled(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm), false);
-    pio_restart_sm_mask(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm));
+    pio_set_sm_mask_enabled(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm) | (1 << dat_writer_slow.sm) | (1 << clock_probe.sm), false);
+    pio_restart_sm_mask(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm) | (1 << dat_writer_slow.sm) | (1 << clock_probe.sm));
 
     pio_sm_exec(pio0, cmd_reader.sm, pio_encode_jmp(cmd_reader.offset));
     pio_sm_exec(pio0, dat_writer.sm, pio_encode_jmp(dat_writer.offset));
+    pio_sm_exec(pio0, dat_writer_slow.sm, pio_encode_jmp(dat_writer_slow.offset));
+    pio_sm_exec(pio0, clock_probe.sm, pio_encode_jmp(clock_probe.offset));
 
     pio_sm_clear_fifos(pio0, cmd_reader.sm);
-    pio_sm_drain_tx_fifo(pio0, dat_writer.sm);
+    RAM_pio_sm_drain_tx_fifo(pio0, dat_writer.sm);
+    RAM_pio_sm_drain_tx_fifo(pio0, dat_writer_slow.sm);
+    pio_sm_clear_fifos(pio0, clock_probe.sm);
 
-    pio_enable_sm_mask_in_sync(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm));
+    pio_enable_sm_mask_in_sync(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm) | (1 << dat_writer_slow.sm) | (1 << clock_probe.sm));
 
     reset = 1;
 }
@@ -57,134 +87,207 @@ static void __time_critical_func(init_pio)(void) {
     dat_writer.offset = pio_add_program(pio0, &dat_writer_program);
     dat_writer.sm = pio_claim_unused_sm(pio0, true);
 
+    dat_writer_slow.offset = pio_add_program(pio0, &dat_writer_slow_program);
+    dat_writer_slow.sm = pio_claim_unused_sm(pio0, true);
+
+    clock_probe.offset = pio_add_program(pio0, &clock_probe_program);
+    clock_probe.sm = pio_claim_unused_sm(pio0, true);
+
     cmd_reader_program_init(pio0, cmd_reader.sm, cmd_reader.offset);
     dat_writer_program_init(pio0, dat_writer.sm, dat_writer.offset);
+    dat_writer_slow_program_init(pio0, dat_writer_slow.sm, dat_writer_slow.offset);
+    clock_probe_program_init(pio0, clock_probe.sm, clock_probe.offset);
 }
 
 static void __time_critical_func(card_deselected)(uint32_t gpio, uint32_t event_mask) {
-    if (gpio == PIN_PSX_SEL && (event_mask & GPIO_IRQ_EDGE_RISE))
+    if (gpio == PIN_PSX_SEL && (event_mask & GPIO_IRQ_EDGE_RISE)) {
         reset_pio();
+    }
 }
 
-static uint8_t __time_critical_func(recv_cmd)(void) {
+static inline uint8_t __time_critical_func(recv_cmd)(void) {
     return (uint8_t) (pio_sm_get_blocking(pio0, cmd_reader.sm) >> 24);
 }
 
-static int __time_critical_func(mc_do_state)(uint8_t ch) {
-    static uint8_t payload[256];
-    if (byte_count >= sizeof(payload))
-        return -1;
-    payload[byte_count++] = ch;
-
-    if (byte_count == 1) {
-        /* First byte - determine the device the command is for */
-        if (ch == 0x81)
-            return flag;
-    } else if (payload[0] == 0x81) {
-        /* Command for the memory card */
-        uint8_t cmd = payload[1];
-
-        if (cmd == 'S') {
-            /* Memory card status */
-            switch (byte_count) {
-                case 2: return 0x5A;
-                case 3: return 0x5D;
-                case 4: return 0x5C;
-                case 5: return 0x5D;
-                case 6: return 0x04;
-                case 7: return 0x00;
-                case 8: return 0x00;
-                case 9: return 0x80;
-            }
-        } else if (cmd == 'R') {
-            /* Memory card read */
-            #define MSB (payload[4])
-            #define LSB (payload[5])
-            #define OFF ((MSB * 256 + LSB) * 128 + byte_count - 10)
-
-            static uint8_t chk;
-
-            switch (byte_count) {
-                case 2: return 0x5A;
-                case 3: return 0x5D;
-                case 4: return 0x00;
-                case 5: return MSB;
-                case 6: return 0x5C;
-                case 7: return 0x5D;
-                case 8: return MSB;
-                case 9: chk = MSB ^ LSB; return LSB;
-                case 10 ... 137: chk ^= tonyhax[OFF]; return tonyhax[OFF]; // TODO: data
-                case 138: return chk;
-                case 139: return 0x47;
-            }
-
-            #undef MSB
-            #undef LSB
-            #undef OFF
-        } else if (cmd == 'W') {
-            /* Memory card write */
-            #define MSB (payload[4])
-            #define LSB (payload[5])
-            #define OFF ((MSB * 256 + LSB) * 128 + byte_count - 6)
-
-            switch (byte_count) {
-                case 2: flag = 0; return 0x5A;
-                case 3: return 0x5D;
-                case 4: return 0x00;
-                case 5: return MSB;
-                case 6 ... 133: tonyhax[OFF] = payload[byte_count - 1]; return payload[byte_count - 1];
-                case 134: return payload[byte_count - 1];
-                case 135: return 0x5C;
-                case 136: return 0x5D;
-                case 137: return 0x47;
-            }
-
-            #undef MSB
-            #undef LSB
-            #undef OFF
-        }
-    }
-
-    return -1;
+static inline uint32_t __time_critical_func(probe_clock)(void) {
+    return pio_sm_get_blocking(pio0, clock_probe.sm);
 }
 
-static void __time_critical_func(mc_respond)(uint8_t ch) {
-    pio_sm_put_blocking(pio0, dat_writer.sm, ~ch & 0xFF);
+static inline void __time_critical_func(mc_respond_fast)(uint8_t ch) {
+    pio_sm_put_blocking(pio0, dat_writer.sm, ch);
+}
+
+static inline void __time_critical_func(mc_respond_slow)(uint8_t ch) {
+    pio_sm_put_blocking(pio0, dat_writer_slow.sm, ch);
+}
+
+uint8_t Table[] = {
+	0x00, 0x87, 0x96, 0x11, 0xa5, 0x22, 0x33, 0xb4,0xb4, 0x33, 0x22, 0xa5, 0x11, 0x96, 0x87, 0x00,
+	0xc3, 0x44, 0x55, 0xd2, 0x66, 0xe1, 0xf0, 0x77,0x77, 0xf0, 0xe1, 0x66, 0xd2, 0x55, 0x44, 0xc3,
+	0xd2, 0x55, 0x44, 0xc3, 0x77, 0xf0, 0xe1, 0x66,0x66, 0xe1, 0xf0, 0x77, 0xc3, 0x44, 0x55, 0xd2,
+	0x11, 0x96, 0x87, 0x00, 0xb4, 0x33, 0x22, 0xa5,0xa5, 0x22, 0x33, 0xb4, 0x00, 0x87, 0x96, 0x11,
+	0xe1, 0x66, 0x77, 0xf0, 0x44, 0xc3, 0xd2, 0x55,0x55, 0xd2, 0xc3, 0x44, 0xf0, 0x77, 0x66, 0xe1,
+	0x22, 0xa5, 0xb4, 0x33, 0x87, 0x00, 0x11, 0x96,0x96, 0x11, 0x00, 0x87, 0x33, 0xb4, 0xa5, 0x22,
+	0x33, 0xb4, 0xa5, 0x22, 0x96, 0x11, 0x00, 0x87,0x87, 0x00, 0x11, 0x96, 0x22, 0xa5, 0xb4, 0x33,
+	0xf0, 0x77, 0x66, 0xe1, 0x55, 0xd2, 0xc3, 0x44,0x44, 0xc3, 0xd2, 0x55, 0xe1, 0x66, 0x77, 0xf0,
+	0xf0, 0x77, 0x66, 0xe1, 0x55, 0xd2, 0xc3, 0x44,0x44, 0xc3, 0xd2, 0x55, 0xe1, 0x66, 0x77, 0xf0,
+	0x33, 0xb4, 0xa5, 0x22, 0x96, 0x11, 0x00, 0x87,0x87, 0x00, 0x11, 0x96, 0x22, 0xa5, 0xb4, 0x33,
+	0x22, 0xa5, 0xb4, 0x33, 0x87, 0x00, 0x11, 0x96,0x96, 0x11, 0x00, 0x87, 0x33, 0xb4, 0xa5, 0x22,
+	0xe1, 0x66, 0x77, 0xf0, 0x44, 0xc3, 0xd2, 0x55,0x55, 0xd2, 0xc3, 0x44, 0xf0, 0x77, 0x66, 0xe1,
+	0x11, 0x96, 0x87, 0x00, 0xb4, 0x33, 0x22, 0xa5,0xa5, 0x22, 0x33, 0xb4, 0x00, 0x87, 0x96, 0x11,
+	0xd2, 0x55, 0x44, 0xc3, 0x77, 0xf0, 0xe1, 0x66,0x66, 0xe1, 0xf0, 0x77, 0xc3, 0x44, 0x55, 0xd2,
+	0xc3, 0x44, 0x55, 0xd2, 0x66, 0xe1, 0xf0, 0x77,0x77, 0xf0, 0xe1, 0x66, 0xd2, 0x55, 0x44, 0xc3,
+	0x00, 0x87, 0x96, 0x11, 0xa5, 0x22, 0x33, 0xb4,0xb4, 0x33, 0x22, 0xa5, 0x11, 0x96, 0x87, 0x00
+};
+
+void calcECC(uint8_t *ecc, const uint8_t *data)
+{
+	int i, c;
+
+	ecc[0] = ecc[1] = ecc[2] = 0;
+
+	for (i = 0 ; i < 0x80 ; i ++) {
+		c = Table[data[i]];
+
+		ecc[0] ^= c;
+		if (c & 0x80) {
+			ecc[1] ^= ~i;
+			ecc[2] ^= i;
+		}
+	}
+	ecc[0] = ~ecc[0];
+	ecc[0] &= 0x77;
+
+	ecc[1] = ~ecc[1];
+	ecc[1] &= 0x7f;
+
+	ecc[2] = ~ecc[2];
+	ecc[2] &= 0x7f;
+
+	return;
+}
+
+// keysource and key are self generated values
+uint8_t keysource[] = { 0xf5, 0x80, 0x95, 0x3c, 0x4c, 0x84, 0xa9, 0xc0 };
+uint8_t dex_key[16] = { 0x17, 0x39, 0xd3, 0xbc, 0xd0, 0x2c, 0x18, 0x07, 0x4b, 0x17, 0xf0, 0xea, 0xc4, 0x66, 0x30, 0xf9 };
+uint8_t cex_key[16] = { 0x06, 0x46, 0x7a, 0x6c, 0x5b, 0x9b, 0x82, 0x77, 0x0d, 0xdf, 0xe9, 0x7e, 0x24, 0x5b, 0x9f, 0xca };
+uint8_t *key = cex_key;
+
+static uint8_t iv[8];
+static uint8_t seed[8];
+static uint8_t nonce[8];
+static uint8_t MechaChallenge3[8];
+static uint8_t MechaChallenge2[8];
+static uint8_t MechaChallenge1[8];
+static uint8_t CardResponse1[8];
+static uint8_t CardResponse2[8];
+static uint8_t CardResponse3[8];
+
+static void desEncrypt(void *key, void *data)
+{
+	DesContext dc;
+	desInit(&dc, (uint8_t *) key, 8);
+	desEncryptBlock(&dc, (uint8_t *) data, (uint8_t *) data);
+}
+
+static void desDecrypt(void *key, void *data)
+{
+	DesContext dc;
+	desInit(&dc, (uint8_t *) key, 8);
+	desDecryptBlock(&dc, (uint8_t *) data, (uint8_t *) data);
+}
+
+static void doubleDesEncrypt(void *key, void *data)
+{
+	desEncrypt(key, data);
+	desDecrypt(&((uint8_t *) key)[8], data);
+	desEncrypt(key, data);
+}
+
+static void doubleDesDecrypt(void *key, void *data)
+{
+	desDecrypt(key, data);
+	desEncrypt(&((uint8_t *) key)[8], data);
+	desDecrypt(key, data);
+}
+
+static void xor_bit(const void* a, const void* b, void* Result, size_t Length)
+{
+	size_t i;
+	for (i = 0; i < Length; i++) {
+		((uint8_t*)Result)[i] = ((uint8_t*)a)[i] ^ ((uint8_t*)b)[i];
+	}
+}
+
+void generateIvSeedNonce()
+{
+	for (int i = 0; i < 8; i++)
+	{
+		iv[i] = 0x42;
+		seed[i] = keysource[i] ^ iv[i];
+		nonce[i] = 0x42;
+	}
+}
+
+void generateResponse()
+{
+	doubleDesDecrypt(key, MechaChallenge1);
+	uint8_t random[8] = { 0 };
+	xor_bit(MechaChallenge1, ChallengeIV, random, 8);
+
+	// MechaChallenge2 and MechaChallenge3 let's the card verify the console
+
+	xor_bit(nonce, ChallengeIV, CardResponse1, 8);
+
+	doubleDesEncrypt(key, CardResponse1);
+
+	xor_bit(random, CardResponse1, CardResponse2, 8);
+	doubleDesEncrypt(key, CardResponse2);
+
+	uint8_t CardKey[] = { 'M', 'e', 'c', 'h', 'a', 'P', 'w', 'n' };
+	xor_bit(CardKey, CardResponse2, CardResponse3, 8);
+	doubleDesEncrypt(key, CardResponse3);
 }
 
 void __time_critical_func(mc_main_loop)(void) {
-    flag = 8;
-
     while (1) {
-        uint8_t ch = recv_cmd();
-        /* If this ch belongs to the next command sequence */
-        if (reset)
-            reset = ignore = byte_count = 0;
+        uint8_t ch;
 
-        /* If the command sequence is not to be processed (e.g. controller command or unknown) */
-        if (ignore)
+        while (!reset)
+        {}
+        reset = 0;
+
+        ch = recv_cmd();
+
+        if (ch == 0x81) {
+            if (probe_clock()) {
+#define send mc_respond_fast
+#include "memory_card.in.c"
+#undef send
+            } else {
+#define send mc_respond_slow
+#include "memory_card.in.c"
+#undef send
+            }
+        } else {
+            // not for us
             continue;
-
-        /* Process by the state machine */
-        int next = mc_do_state(ch);
-
-        /* Respond on next byte transfer or stop responding to this sequence altogether if it's not for us */
-        if (next == -1)
-            ignore = 1;
-        else {
-            // debug_printf("R %02X -> %02X\n", ch, next);
-            mc_respond(next);
         }
     }
 }
 
 void memory_card_main(void) {
     init_pio();
+    generateIvSeedNonce();
 
     us_startup = time_us_64();
     debug_printf("Secondary core!\n");
 
     gpio_set_irq_enabled_with_callback(PIN_PSX_SEL, GPIO_IRQ_EDGE_RISE, 1, card_deselected);
 
+    debug_printf("slew %d drive %d\n", gpio_get_slew_rate(20), gpio_get_drive_strength(20));
+    gpio_set_slew_rate(20, GPIO_SLEW_RATE_FAST);
+    gpio_set_drive_strength(20, GPIO_DRIVE_STRENGTH_12MA);
+    debug_printf("slew %d drive %d\n", gpio_get_slew_rate(20), gpio_get_drive_strength(20));
     mc_main_loop();
 }
