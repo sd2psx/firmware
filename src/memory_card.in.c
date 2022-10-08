@@ -58,7 +58,7 @@ if (ch == 0x11) {
     send(0xFF); ck = recv_cmd();
     send(0x2B); recv_cmd();
     read_sector = raw.addr;
-    if (read_sector * 512 + 512 < CARD_SIZE) {
+    if (read_sector * 512 + 512 <= CARD_SIZE) {
         dirty_lockout_renew();
         /* the spinlock will be unlocked by the DMA irq once all data is tx'd */
         dirty_lock();
@@ -169,7 +169,7 @@ if (ch == 0x11) {
     /* commit for read/write? */
     if (is_write) {
         is_write = 0;
-        if (write_sector * 512 + 512 < CARD_SIZE) {
+        if (write_sector * 512 + 512 <= CARD_SIZE) {
             dirty_lockout_renew();
             dirty_lock();
             psram_write(write_sector * 512, writetmp, 512);
@@ -182,7 +182,7 @@ if (ch == 0x11) {
     send(term);
 } else if (ch == 0x82) {
     /* do erase */
-    if (erase_sector * 512 + 512 * ERASE_SECTORS < CARD_SIZE) {
+    if (erase_sector * 512 + 512 * ERASE_SECTORS <= CARD_SIZE) {
         memset(readtmp.buf, 0xFF, 512);
         dirty_lockout_renew();
         dirty_lock();
