@@ -1,0 +1,12 @@
+[submodule "ext/pico-ssd1306"]
+	path = ext/pico-ssd1306
+	url = https://github.com/daschr/pico-ssd1306.git
+[submodule "ext/no-OS-FatFS-SD-SPI-RPi-Pico"]
+	path = ext/no-OS-FatFS-SD-SPI-RPi-Pico
+	url = https://github.com/carlk3/no-OS-FatFS-SD-SPI-RPi-Pico.git
+[submodule "ext/pico-sdk"]
+	path = ext/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
+[submodule "ext/lvgl"]
+	path = ext/lvgl
+	url = https://github.com/lvgl/lvgl.git
