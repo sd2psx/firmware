@@ -6,6 +6,11 @@ send(0xFF);
 
 /* sub cmd */
 ch = recv_cmd();
+#ifdef DEBUG_MC_PROTOCOL
+if (ch != 0x42 && ch != 0x43)
+    debug_printf("> %02X\n", ch);
+#endif
+
 if (ch == 0x11) {
     send(0x2B); recv_cmd();
     send(term);
@@ -65,7 +70,6 @@ if (ch == 0x11) {
         psram_read_dma(read_sector * 512, &readtmp, 512+4);
         // dma_channel_wait_for_finish_blocking(0);
         // dma_channel_wait_for_finish_blocking(1);
-        // printf("first %02X %02X %02X %02X\n", readtmp.buf[0], readtmp.buf[1], readtmp.buf[2], readtmp.buf[3]);
     }
     readptr = 0;
 
@@ -106,6 +110,10 @@ if (ch == 0x11) {
     send(0xFF); sz = recv_cmd();
     send(0xFF);
 
+#ifdef DEBUG_MC_PROTOCOL
+    debug_printf("> %02X %02X\n", ch, sz);
+#endif
+
     uint8_t ck = 0;
     uint8_t b;
 
@@ -129,21 +137,45 @@ if (ch == 0x11) {
     send(0xFF); sz = recv_cmd();
     send(0x2B); recv_cmd();
 
+#ifdef DEBUG_MC_PROTOCOL
+    debug_printf("> %02X %02X\n", ch, sz);
+#endif
+
     uint8_t ck = 0;
     uint8_t b = 0xFF;
 
     for (int i = 0; i < sz; ++i) {
+        if (readptr == sizeof(readtmp.buf)) {
+            /* a game may read more than one 528-byte sector in a sequence of read ops, e.g. re4 */
+            ++read_sector;
+            if (read_sector * 512 + 512 <= CARD_SIZE) {
+                dirty_lockout_renew();
+                /* the spinlock will be unlocked by the DMA irq once all data is tx'd */
+                dirty_lock();
+                psram_read_dma(read_sector * 512, &readtmp, 512+4);
+                // TODO: remove this if safe
+                // must make sure the dma completes for first byte before we start reading below
+                dma_channel_wait_for_finish_blocking(0);
+                dma_channel_wait_for_finish_blocking(1);
+            }
+            readptr = 0;
+
+            eccptr = &readtmp.buf[512];
+            memset(eccptr, 0, 16);
+        }
+
         if (readptr < sizeof(readtmp.buf)) {
             b = readtmp.buf[readptr];
-            ++readptr;
 
             if (readptr <= 512) {
                 uint8_t c = Table[b];
                 eccptr[0] ^= c;
                 if (c & 0x80) {
-                    eccptr[1] ^= ~i;
-                    eccptr[2] ^= i;
+                    eccptr[1] ^= ~(readptr & 0x7F);
+                    eccptr[2] ^= (readptr & 0x7F);
                 }
+
+                ++readptr;
 
                 if ((readptr & 0x7F) == 0) {
                     eccptr[0] = ~eccptr[0];
@@ -157,6 +189,8 @@ if (ch == 0x11) {
 
                     eccptr += 3;
                 }
+            } else {
+                ++readptr;
             }
         }
         ck ^= b;
@@ -175,7 +209,18 @@ if (ch == 0x11) {
             psram_write(write_sector * 512, writetmp, 512);
             dirty_mark(write_sector);
             dirty_unlock();
+#ifdef DEBUG_MC_PROTOCOL
+            debug_printf("WR 0x%08X : %02X %02X .. %08X %08X %08X\n",
+                write_sector * 512, writetmp[0], writetmp[1],
+                *(uint32_t*)&writetmp[512], *(uint32_t*)&writetmp[516], *(uint32_t*)&writetmp[520]);
+#endif
         }
+    } else {
+#ifdef DEBUG_MC_PROTOCOL
+        debug_printf("RD 0x%08X : %02X %02X .. %08X %08X %08X\n",
+            read_sector * 512, readtmp.buf[0], readtmp.buf[1],
+            *(uint32_t*)&readtmp.buf[512], *(uint32_t*)&readtmp.buf[516], *(uint32_t*)&readtmp.buf[520]);
+#endif
     }
 
     send(0x2B); recv_cmd();
@@ -191,6 +236,9 @@ if (ch == 0x11) {
             dirty_mark(erase_sector + i);
         }
         dirty_unlock();
+#ifdef DEBUG_MC_PROTOCOL
+        debug_printf("ER 0x%08X\n", erase_sector * 512);
+#endif
     }
     send(0x2B); recv_cmd();
     send(term);
@@ -419,6 +467,8 @@ if (ch == 0x11) {
         /* dummy 14 */
         send(0x2B); recv_cmd();
         send(term);
+    } else {
+        debug_printf("unknown %02X -> %02X\n", ch, subcmd);
     }
 } else if (ch == 0xF1 || ch == 0xF2) {
     static uint8_t hostkey[9];
@@ -449,7 +499,7 @@ if (ch == 0x11) {
         }
         send(term);
     } else {
-        debug_printf("!! unhandled subcmd %02X -> %02X\n", 0xF2, subcmd);
+        debug_printf("!! unknown subcmd %02X -> %02X\n", 0xF2, subcmd);
     }
 } else {
     debug_printf("!! unknown %02X\n", ch);

@@ -13,6 +13,8 @@
 
 #include <string.h>
 
+// #define DEBUG_MC_PROTOCOL
+
 uint64_t us_startup;
 
 int byte_count;
