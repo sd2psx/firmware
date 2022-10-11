@@ -42,6 +42,7 @@ uint8_t *eccptr;
 uint8_t writetmp[528];
 int is_write, is_dma_read;
 uint32_t readptr, writeptr;
+volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_enter_response;
 
 static inline void __time_critical_func(RAM_pio_sm_drain_tx_fifo)(PIO pio, uint sm) {
     uint instr = (pio->sm[sm].shiftctrl & PIO_SM0_SHIFTCTRL_AUTOPULL_BITS) ? pio_encode_out(pio_null, 32) :
@@ -122,6 +123,27 @@ static void __time_critical_func(card_deselected)(uint32_t gpio, uint32_t event_
     1) { \
         if (reset) \
             goto NEXTCMD; \
+    } \
+    cmd = (uint8_t) (pio_sm_get(pio0, cmd_reader.sm) >> 24); \
+} while (0);
+
+#define recvfirst() do { \
+    while ( \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+    1) { \
+        if (reset) \
+            goto NEXTCMD; \
+        if (mc_exit_request) \
+            goto EXIT_REQUEST; \
     } \
     cmd = (uint8_t) (pio_sm_get(pio0, cmd_reader.sm) >> 24); \
 } while (0);
@@ -275,7 +297,7 @@ NEXTCMD:
         {}
         reset = 0;
 
-        recv();
+        recvfirst();
 
         if (cmd == 0x81) {
             if (probe_clock()) {
@@ -292,6 +314,19 @@ NEXTCMD:
             continue;
         }
     }
+
+EXIT_REQUEST:
+    mc_exit_response = 1;
+}
+
+void __time_critical_func(mc_main)(void) {
+    while (1) {
+        while (!mc_enter_request)
+        {}
+        mc_enter_response = 1;
+
+        mc_main_loop();
+    }
 }
 
 void memory_card_main(void) {
@@ -307,5 +342,29 @@ void memory_card_main(void) {
     gpio_set_slew_rate(20, GPIO_SLEW_RATE_FAST);
     gpio_set_drive_strength(20, GPIO_DRIVE_STRENGTH_12MA);
     debug_printf("slew %d drive %d\n", gpio_get_slew_rate(20), gpio_get_drive_strength(20));
-    mc_main_loop();
+    mc_main();
+}
+
+static int memcard_running;
+
+void memory_card_exit(void) {
+    if (!memcard_running)
+        return;
+
+    mc_exit_request = 1;
+    while (!mc_exit_response)
+    {}
+    mc_exit_request = mc_exit_response = 0;
+    memcard_running = 0;
+}
+
+void memory_card_enter(void) {
+    if (memcard_running)
+        return;
+
+    mc_enter_request = 1;
+    while (!mc_enter_response)
+    {}
+    mc_enter_request = mc_enter_response = 0;
+    memcard_running = 1;
 }

@@ -66,14 +66,20 @@ int main() {
     psram_init();
     sd_init();
     dirty_init();
-    // gui_init();
+    gui_init();
 
     multicore_launch_core1(memory_card_main);
+
+    printf("Starting memory card... ");
+    uint64_t start = time_us_64();
+    memory_card_enter();
+    uint64_t end = time_us_64();
+    printf("DONE! (%d us)\n", (int)(end - start));
 
     while (1) {
         debug_task();
         dirty_task();
-        // gui_task();
-        // input_task();
+        gui_task();
+        input_task();
     }
 }

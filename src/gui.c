@@ -1,12 +1,14 @@
 #include "gui.h"
 
 #include <inttypes.h>
+#include <stdio.h>
 
 #include "config.h"
 #include "ssd1306.h"
 #include "lvgl.h"
 #include "input.h"
 #include "ui_menu.h"
+#include "memory_card.h"
 
 static ssd1306_t oled_disp = { .external_vcc = 0 };
 /* Displays the line at the bottom for long pressing buttons */
@@ -19,6 +21,7 @@ static lv_style_t style_inv;
 #define COLOR_BG      lv_color_black()
 
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
+#if 0
     ssd1306_clear(&oled_disp);
 
     for(int y = area->y1; y <= area->y2; y++) {
@@ -30,6 +33,7 @@ static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t 
     }
 
     ssd1306_show(&oled_disp);
+#endif
     lv_disp_flush_ready(disp_drv);
 }
 
@@ -68,13 +72,26 @@ static void evt_scr_main(lv_event_t *event) {
             lv_group_focus_obj(first);
             lv_event_stop_bubbling(event);
         }
+
+        if (key == INPUT_KEY_PREV) {
+            printf("Shutting down memory card... ");
+            uint64_t start = time_us_64();
+            memory_card_exit();
+            uint64_t end = time_us_64();
+            printf("DONE! (%d us)\n", (int)(end - start));
+        } else if (key == INPUT_KEY_NEXT) {
+            printf("Starting memory card... ");
+            uint64_t start = time_us_64();
+            memory_card_enter();
+            uint64_t end = time_us_64();
+            printf("DONE! (%d us)\n", (int)(end - start));
+        }
     }
 }
 
 static void evt_scr_freepsxboot(lv_event_t *event) {
     if (event->code == LV_EVENT_KEY) {
         uint32_t key = lv_indev_get_key(lv_indev_get_act());
-        printf("TODO: handle disable freepsxboot mode\n");
         UI_GOTO_SCREEN(scr_main);
         lv_event_stop_bubbling(event);
     }
