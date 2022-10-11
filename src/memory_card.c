@@ -108,7 +108,18 @@ static void __time_critical_func(card_deselected)(uint32_t gpio, uint32_t event_
 }
 
 #define recv() do { \
-    while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm)) { \
+    while ( \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+    1) { \
         if (reset) \
             goto NEXTCMD; \
     } \
