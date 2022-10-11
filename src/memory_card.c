@@ -107,9 +107,13 @@ static void __time_critical_func(card_deselected)(uint32_t gpio, uint32_t event_
     }
 }
 
-static inline uint8_t __time_critical_func(recv_cmd)(void) {
-    return (uint8_t) (pio_sm_get_blocking(pio0, cmd_reader.sm) >> 24);
-}
+#define recv() do { \
+    while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm)) { \
+        if (reset) \
+            goto NEXTCMD; \
+    } \
+    cmd = (uint8_t) (pio_sm_get(pio0, cmd_reader.sm) >> 24); \
+} while (0);
 
 static inline uint32_t __time_critical_func(probe_clock)(void) {
     return pio_sm_get_blocking(pio0, clock_probe.sm);
@@ -253,15 +257,16 @@ void generateResponse()
 
 void __time_critical_func(mc_main_loop)(void) {
     while (1) {
-        uint8_t ch;
+        uint8_t cmd, ch;
 
+NEXTCMD:
         while (!reset)
         {}
         reset = 0;
 
-        ch = recv_cmd();
+        recv();
 
-        if (ch == 0x81) {
+        if (cmd == 0x81) {
             if (probe_clock()) {
 #define send mc_respond_fast
 #include "memory_card.in.c"
