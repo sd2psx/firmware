@@ -168,6 +168,7 @@ if (ch == 0x11) {
 
         if (readptr < sizeof(readtmp.buf)) {
             b = readtmp.buf[readptr];
+            send(b);
 
             if (readptr <= 512) {
                 uint8_t c = Table[b];
@@ -194,9 +195,9 @@ if (ch == 0x11) {
             } else {
                 ++readptr;
             }
-        }
+        } else send(b);
         ck ^= b;
-        send(b); recv();
+        recv();
     }
 
     send(ck); recv();
