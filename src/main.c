@@ -79,7 +79,7 @@ int main() {
     while (1) {
         debug_task();
         dirty_task();
-        gui_task();
+        // gui_task();
         input_task();
     }
 }
