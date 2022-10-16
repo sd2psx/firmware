@@ -30,8 +30,6 @@ add_executable(sd2psx
     src/arduino_wrapper/sd.cpp
     src/arduino_wrapper/SPI.cpp
 
-    ext/pico-ssd1306/ssd1306.c
-
     ext/ESP8266SdFat/src/common/FmtNumber.cpp
     ext/ESP8266SdFat/src/common/FsCache.cpp
     ext/ESP8266SdFat/src/common/FsDateTime.cpp
@@ -69,6 +67,9 @@ add_executable(sd2psx
     ext/ESP8266SdFat/src/SdCard/SdSpiCard.cpp
 )
 
+add_library(ssd1306 STATIC ext/pico-ssd1306/ssd1306.c)
+target_link_libraries(ssd1306 pico_stdlib hardware_i2c)
+
 target_compile_definitions(
     sd2psx PUBLIC
     PICO_XOSC_STARTUP_DELAY_MULTIPLIER=64
@@ -93,6 +94,7 @@ pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/psx_spi.pio)
 pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/spi.pio)
 
 target_link_libraries(sd2psx
+    ssd1306
     pico_stdlib
     pico_multicore
     hardware_pio
