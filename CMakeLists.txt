@@ -106,4 +106,6 @@ target_link_libraries(sd2psx
     lvgl::lvgl
 )
 
+set_target_properties(sd2psx PROPERTIES PICO_TARGET_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/memmap_custom.ld)
+
 pico_add_extra_outputs(sd2psx)
