@@ -21,4 +21,10 @@ void pio_spi_read8_blocking(const pio_spi_inst_t *spi, uint8_t *dst, size_t len)
 
 void pio_spi_write8_read8_blocking(const pio_spi_inst_t *spi, uint8_t *src, size_t srclen, uint8_t *dst, size_t dstlen);
 
+void pio_qspi_write8_read8_blocking(const pio_spi_inst_t *spi, uint8_t *src, size_t srclen, uint8_t *dst, size_t dstlen);
+
+void pio_qspi_write8_read8_dma(const pio_spi_inst_t *spi, uint8_t *src, size_t srclen, uint8_t *dst, size_t dstlen);
+
+void pio_qspi_dma_init(const pio_spi_inst_t *spi);
+
 #endif

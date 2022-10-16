@@ -76,6 +76,11 @@ target_compile_definitions(
     USE_SPI_ARRAY_TRANSFER=1
 )
 
+target_compile_options(
+    sd2psx PRIVATE
+    -Wall -Wextra
+)
+
 target_include_directories(sd2psx PUBLIC
     src/arduino_wrapper
 

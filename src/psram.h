@@ -1,4 +1,9 @@
 #pragma once
 
-void psram_read(uint32_t addr, uint8_t *buf, size_t sz);
-void psram_write(uint32_t addr, uint8_t *buf, size_t sz);
+#include <inttypes.h>
+#include <stddef.h>
+
+void psram_init(void);
+void psram_read(uint32_t addr, void *buf, size_t sz);
+void psram_write(uint32_t addr, void *buf, size_t sz);
+void psram_read_dma(uint32_t addr, void *buf, size_t sz);

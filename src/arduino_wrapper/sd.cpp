@@ -85,8 +85,8 @@ extern "C" void dirty_task(void) {
 
         ++hit;
 
-        int seek = dataFile.seekSet(sector * 512);
-        size_t wr = dataFile.write(flushbuf, 512);
+        dataFile.seekSet(sector * 512);
+        dataFile.write(flushbuf, 512);
         // TODO: check return code etc
     }
     dataFile.flush();

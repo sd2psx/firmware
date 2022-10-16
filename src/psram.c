@@ -1,8 +1,11 @@
 #include "config.h"
+#include "psram.h"
 
 #include "pio_spi.h"
+#include "hardware/timer.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "debug.h"
 
@@ -64,12 +67,12 @@ static void psram_run_tests(void) {
 
     uint64_t start = time_us_64();
 
-    for (int test = 0; test < NUM_TESTS; ++test) {
+    for (size_t test = 0; test < NUM_TESTS; ++test) {
         printf("Start PSRAM test %d\n", test);
         psram_tests[test](cmd_write+4);
 
         uint32_t addr = 0;
-        for (int i = 0; i < TEST_CYCLES; ++i) {
+        for (size_t i = 0; i < TEST_CYCLES; ++i) {
             memset(buf, 0, sizeof(buf));
 
             cmd_write[1] = cmd_read[1] = (addr & 0xFF0000) >> 16;
@@ -94,20 +97,23 @@ static void psram_run_tests(void) {
         1000000.0 * (NUM_TESTS * TEST_CYCLES * TEST_BLOCK_SIZE * 2) / (end - start) / 1024);
 }
 
-void psram_read(uint32_t addr, uint8_t *buf, size_t sz) {
+void psram_read(uint32_t addr, void *vbuf, size_t sz) {
+    uint8_t *buf = vbuf;
     uint8_t cmd_read[4] = { 0xEB, (addr & 0xFF0000) >> 16, (addr & 0xFF00) >> 8, (addr & 0xFF) };
     uint8_t tmpbuf[4 + 512];
     SPI_OP(pio_qspi_write8_read8_blocking(&spi, cmd_read, sizeof(cmd_read), tmpbuf, sizeof(tmpbuf)));
     memcpy(buf, tmpbuf+4, sz);
 }
 
-void __time_critical_func(psram_read_dma)(uint32_t addr, uint8_t *buf, size_t sz) {
+void __time_critical_func(psram_read_dma)(uint32_t addr, void *vbuf, size_t sz) {
+    uint8_t *buf = vbuf;
     uint8_t cmd_read[4] = { 0xEB, (addr & 0xFF0000) >> 16, (addr & 0xFF00) >> 8, (addr & 0xFF) };
     gpio_put(spi.cs_pin, 0);
     pio_qspi_write8_read8_dma(&spi, cmd_read, sizeof(cmd_read), buf, sz);
 }
 
-void __time_critical_func(psram_write)(uint32_t addr, uint8_t *buf, size_t sz) {
+void __time_critical_func(psram_write)(uint32_t addr, void *vbuf, size_t sz) {
+    uint8_t *buf = vbuf;
     uint8_t cmd_write[4 + 512];
     cmd_write[0] = 0x38;
     cmd_write[1] = (addr & 0xFF0000) >> 16;

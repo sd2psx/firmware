@@ -31,6 +31,7 @@ if (ch == 0x11) {
     send(0xFF); recv(); raw.a[3] = cmd;
     send(0xFF); recv(); ck = cmd;
     send(0x2B); recv();
+    (void)ck; // TODO: validate checksum
     erase_sector = raw.addr;
     send(term);
 } else if (cmd == 0x22) {
@@ -46,6 +47,7 @@ if (ch == 0x11) {
     send(0xFF); recv(); raw.a[3] = cmd;
     send(0xFF); recv(); ck = cmd;
     send(0x2B); recv();
+    (void)ck; // TODO: validate checksum
     write_sector = raw.addr;
     is_write = 1;
     writeptr = 0;
@@ -63,6 +65,7 @@ if (ch == 0x11) {
     send(0xFF); recv(); raw.a[3] = cmd;
     send(0xFF); recv(); ck = cmd;
     send(0x2B); recv();
+    (void)ck; // TODO: validate checksum
     read_sector = raw.addr;
     if (read_sector * 512 + 512 <= CARD_SIZE) {
         dirty_lockout_renew();
@@ -130,6 +133,7 @@ if (ch == 0x11) {
     // this should be checksum?
     recv();
     uint8_t ck2 = cmd;
+    (void)ck2; // TODO: validate checksum
 
     send(0x2B); recv();
     send(term);
@@ -485,7 +489,7 @@ if (ch == 0x11) {
         send(term);
     } else if (subcmd == 0x51 || subcmd == 0x41) {
         /* host sends key to us */
-        for (int i = 0; i < sizeof(hostkey); ++i) {
+        for (size_t i = 0; i < sizeof(hostkey); ++i) {
             send(0xFF);
             recv();
             hostkey[i] = cmd;
@@ -493,13 +497,13 @@ if (ch == 0x11) {
         send(0x2B); recv();
         send(term);
     } else if (subcmd == 0x52 || subcmd == 0x42) {
-        /* now we "encrypt" the key */
+        /* now we encrypt/decrypt the key */
         send(0x2B); recv();
         send(term);
     } else if (subcmd == 0x53 || subcmd == 0x43) {
         send(0x2B); recv();
         /* we send key to the host */
-        for (int i = 0; i < sizeof(hostkey); ++i) {
+        for (size_t i = 0; i < sizeof(hostkey); ++i) {
             send(hostkey[i]);
             recv();
         }

@@ -10,6 +10,7 @@
 #include "keys.h"
 #include "des.h"
 #include "dirty.h"
+#include "psram.h"
 
 #include <string.h>
 
@@ -102,7 +103,7 @@ static void __time_critical_func(init_pio)(void) {
     clock_probe_program_init(pio0, clock_probe.sm, clock_probe.offset);
 }
 
-static void __time_critical_func(card_deselected)(uint32_t gpio, uint32_t event_mask) {
+static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask) {
     if (gpio == PIN_PSX_SEL && (event_mask & GPIO_IRQ_EDGE_RISE)) {
         reset_pio();
     }

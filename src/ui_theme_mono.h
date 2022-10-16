@@ -3,8 +3,8 @@
  *
  */
 
-#ifndef LV_USE_THEME_MONO_H
-#define LV_USE_THEME_MONO_H
+#ifndef UI_USE_THEME_MONO_H
+#define UI_USE_THEME_MONO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,8 +14,6 @@ extern "C" {
  *      INCLUDES
  *********************/
 #include "lvgl.h"
-
-#if LV_USE_THEME_MONO
 
 /*********************
  *      DEFINES
@@ -53,5 +51,3 @@ bool ui_theme_mono_is_inited(void);
 #ifdef __cplusplus
 } /*extern "C"*/
 #endif
-
-#endif /*LV_USE_THEME_MONO_H*/

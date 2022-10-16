@@ -10,6 +10,8 @@
 #include "ui_menu.h"
 #include "memory_card.h"
 
+#include "ui_theme_mono.h"
+
 static ssd1306_t oled_disp = { .external_vcc = 0 };
 /* Displays the line at the bottom for long pressing buttons */
 static lv_obj_t *g_navbar;
@@ -33,11 +35,15 @@ static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t 
     }
 
     ssd1306_show(&oled_disp);
+#else
+    (void)area;
+    (void)color_p;
 #endif
     lv_disp_flush_ready(disp_drv);
 }
 
 static void keypad_read(lv_indev_drv_t *drv, lv_indev_data_t *data) {
+    (void)drv;
     int pressed;
 
     data->state = LV_INDEV_STATE_RELEASED;
@@ -62,7 +68,7 @@ static void create_nav(void) {
 static void evt_scr_main(lv_event_t *event) {
     if (event->code == LV_EVENT_KEY) {
         uint32_t key = lv_indev_get_key(lv_indev_get_act());
-        printf("main screen got key %d\n", key);
+        printf("main screen got key %d\n", (int)key);
         if (key == INPUT_KEY_MENU) {
             printf("activate menu!\n");
             lv_scr_load(scr_menu);
@@ -91,7 +97,7 @@ static void evt_scr_main(lv_event_t *event) {
 
 static void evt_scr_freepsxboot(lv_event_t *event) {
     if (event->code == LV_EVENT_KEY) {
-        uint32_t key = lv_indev_get_key(lv_indev_get_act());
+        // uint32_t key = lv_indev_get_key(lv_indev_get_act());
         UI_GOTO_SCREEN(scr_main);
         lv_event_stop_bubbling(event);
     }
@@ -100,7 +106,7 @@ static void evt_scr_freepsxboot(lv_event_t *event) {
 static void evt_scr_menu(lv_event_t *event) {
     if (event->code == LV_EVENT_KEY) {
         uint32_t key = lv_indev_get_key(lv_indev_get_act());
-        printf("menu screen got key %d\n", key);
+        printf("menu screen got key %d\n", (int)key);
         if (key == INPUT_KEY_BACK || key == INPUT_KEY_MENU) {
             UI_GOTO_SCREEN(scr_main);
             lv_event_stop_bubbling(event);

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/bootrom.h"
+#include "pico/multicore.h"
 #include "hardware/gpio.h"
 #include "hardware/clocks.h"
 #include "hardware/vreg.h"
@@ -9,6 +10,10 @@
 #include "gui.h"
 #include "input.h"
 #include "config.h"
+#include "debug.h"
+#include "psram.h"
+#include "sd.h"
+#include "dirty.h"
 
 /* reboot to bootloader if either button is held on startup
    to make the device easier to flash when assembled inside case */
@@ -36,10 +41,6 @@ static void debug_task(void) {
     }
 }
 
-static void __time_critical_func(nothing)(void) {
-    while (1) {}
-}
-
 int main() {
     input_init();
     check_bootloader_reset();
@@ -61,7 +62,7 @@ int main() {
     stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
     // sleep_ms(50);
 
-    printf("\n\n\nStarted! Clock %d\n", clock_get_hz(clk_sys));
+    printf("\n\n\nStarted! Clock %d\n", (int)clock_get_hz(clk_sys));
 
     psram_init();
     sd_init();
