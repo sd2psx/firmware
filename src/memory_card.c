@@ -330,6 +330,52 @@ void __time_critical_func(mc_main)(void) {
     }
 }
 
+static gpio_irq_callback_t callbacks[NUM_CORES];
+
+void __time_critical_func(RAM_gpio_acknowledge_irq)(uint gpio, uint32_t events) {
+    check_gpio_param(gpio);
+    iobank0_hw->intr[gpio / 8] = events << (4 * (gpio % 8));
+}
+
+static void __time_critical_func(RAM_gpio_default_irq_handler)(void) {
+    uint core = get_core_num();
+    gpio_irq_callback_t callback = callbacks[core];
+    io_irq_ctrl_hw_t *irq_ctrl_base = core ? &iobank0_hw->proc1_irq_ctrl : &iobank0_hw->proc0_irq_ctrl;
+    for (uint gpio = 0; gpio < NUM_BANK0_GPIOS; gpio+=8) {
+        uint32_t events8 = irq_ctrl_base->ints[gpio >> 3u];
+        // note we assume events8 is 0 for non-existent GPIO
+        for(uint i=gpio;events8 && i<gpio+8;i++) {
+            uint32_t events = events8 & 0xfu;
+            if (events) {
+                RAM_gpio_acknowledge_irq(i, events);
+                if (callback) {
+                    callback(i, events);
+                }
+            }
+            events8 >>= 4;
+        }
+    }
+}
+
+void my_gpio_set_irq_callback(gpio_irq_callback_t callback) {
+    uint core = get_core_num();
+    if (callbacks[core]) {
+        if (!callback) {
+            irq_remove_handler(IO_IRQ_BANK0, RAM_gpio_default_irq_handler);
+        }
+        callbacks[core] = callback;
+    } else if (callback) {
+        callbacks[core] = callback;
+        irq_add_shared_handler(IO_IRQ_BANK0, RAM_gpio_default_irq_handler, GPIO_IRQ_CALLBACK_ORDER_PRIORITY);
+    }
+}
+
+void my_gpio_set_irq_enabled_with_callback(uint gpio, uint32_t events, bool enabled, gpio_irq_callback_t callback) {
+    gpio_set_irq_enabled(gpio, events, enabled);
+    my_gpio_set_irq_callback(callback);
+    if (enabled) irq_set_enabled(IO_IRQ_BANK0, true);
+}
+
 void memory_card_main(void) {
     init_pio();
     generateIvSeedNonce();
@@ -337,7 +383,7 @@ void memory_card_main(void) {
     us_startup = time_us_64();
     debug_printf("Secondary core!\n");
 
-    gpio_set_irq_enabled_with_callback(PIN_PSX_SEL, GPIO_IRQ_EDGE_RISE, 1, card_deselected);
+    my_gpio_set_irq_enabled_with_callback(PIN_PSX_SEL, GPIO_IRQ_EDGE_RISE, 1, card_deselected);
 
     debug_printf("slew %d drive %d\n", gpio_get_slew_rate(20), gpio_get_drive_strength(20));
     gpio_set_slew_rate(20, GPIO_SLEW_RATE_FAST);

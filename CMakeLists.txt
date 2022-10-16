@@ -80,6 +80,7 @@ target_compile_definitions(
 target_compile_options(
     sd2psx PRIVATE
     -Wall -Wextra
+    -fno-jump-tables
 )
 
 target_include_directories(sd2psx PUBLIC
