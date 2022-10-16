@@ -116,11 +116,6 @@ static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask
         pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
         pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
         pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
     1) { \
         if (reset) \
             goto NEXTCMD; \
@@ -130,11 +125,6 @@ static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask
 
 #define recvfirst() do { \
     while ( \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
         pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
         pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
         pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
