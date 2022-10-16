@@ -38,6 +38,7 @@
   
  //Dependencies
  #include "des.h"
+ #include "pico/platform.h"
  
  #define ROL32(a, n) (((a) << (n)) | ((a) >> (32 - (n))))
  #define ROR32(a, n) (((a) >> (n)) | ((a) << (32 - (n))))
@@ -264,7 +265,7 @@
   * @return Error code
   **/
   
- void desInit(DesContext *context, const uint8_t *key, uint32_t keyLen)
+ void __time_critical_func(desInit)(DesContext *context, const uint8_t *key, uint32_t keyLen)
  {
     uint32_t i;
     uint32_t c;
@@ -337,7 +338,7 @@
   * @param[out] output Ciphertext block resulting from encryption
   **/
   
- void desEncryptBlock(DesContext *context, const uint8_t *input, uint8_t *output)
+ void __time_critical_func(desEncryptBlock)(DesContext *context, const uint8_t *input, uint8_t *output)
  {
     uint32_t i;
     uint32_t left;
@@ -376,7 +377,7 @@
   * @param[out] output Plaintext block resulting from decryption
   **/
   
- void desDecryptBlock(DesContext *context, const uint8_t *input, uint8_t *output)
+ void __time_critical_func(desDecryptBlock)(DesContext *context, const uint8_t *input, uint8_t *output)
  {
     uint32_t i;
     uint32_t left;

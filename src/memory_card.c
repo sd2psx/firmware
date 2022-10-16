@@ -223,35 +223,35 @@ static uint8_t CardResponse1[8];
 static uint8_t CardResponse2[8];
 static uint8_t CardResponse3[8];
 
-static void desEncrypt(void *key, void *data)
+static void __time_critical_func(desEncrypt)(void *key, void *data)
 {
 	DesContext dc;
 	desInit(&dc, (uint8_t *) key, 8);
 	desEncryptBlock(&dc, (uint8_t *) data, (uint8_t *) data);
 }
 
-static void desDecrypt(void *key, void *data)
+static void __time_critical_func(desDecrypt)(void *key, void *data)
 {
 	DesContext dc;
 	desInit(&dc, (uint8_t *) key, 8);
 	desDecryptBlock(&dc, (uint8_t *) data, (uint8_t *) data);
 }
 
-static void doubleDesEncrypt(void *key, void *data)
+static void __time_critical_func(doubleDesEncrypt)(void *key, void *data)
 {
 	desEncrypt(key, data);
 	desDecrypt(&((uint8_t *) key)[8], data);
 	desEncrypt(key, data);
 }
 
-static void doubleDesDecrypt(void *key, void *data)
+static void __time_critical_func(doubleDesDecrypt)(void *key, void *data)
 {
 	desDecrypt(key, data);
 	desEncrypt(&((uint8_t *) key)[8], data);
 	desDecrypt(key, data);
 }
 
-static void xor_bit(const void* a, const void* b, void* Result, size_t Length)
+static void __time_critical_func(xor_bit)(const void* a, const void* b, void* Result, size_t Length)
 {
 	size_t i;
 	for (i = 0; i < Length; i++) {
@@ -259,7 +259,7 @@ static void xor_bit(const void* a, const void* b, void* Result, size_t Length)
 	}
 }
 
-void generateIvSeedNonce()
+void __time_critical_func(generateIvSeedNonce)()
 {
 	for (int i = 0; i < 8; i++)
 	{
@@ -269,7 +269,7 @@ void generateIvSeedNonce()
 	}
 }
 
-void generateResponse()
+void __time_critical_func(generateResponse)()
 {
 	doubleDesDecrypt(key, MechaChallenge1);
 	uint8_t random[8] = { 0 };
