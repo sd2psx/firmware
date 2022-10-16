@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "pico/platform.h"
+
 static char debug_queue[1024];
 static size_t debug_read_pos, debug_write_pos;
 
@@ -21,7 +23,7 @@ char debug_get(void) {
     return ret;
 }
 
-void debug_printf(const char *format, ...) {
+void __time_critical_func(debug_printf)(const char *format, ...) {
     char buf[128];
 
     va_list args;
