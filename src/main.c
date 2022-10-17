@@ -49,24 +49,17 @@ int main() {
     stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
 
     printf("prepare...\n");
-    // set_sys_clock_khz(133000, true);
     int mhz = 240;
     set_sys_clock_khz(mhz * 1000, true);
     clock_configure(clk_peri, 0, CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLK_SYS, mhz * 1000000, mhz * 1000000);
-    // set_sys_clock_khz(340000, true);
-    // vreg_set_voltage(VREG_VOLTAGE_1_25);
-    // sleep_ms(10);
-    // set_sys_clock_khz(400000, true);
-    // set_sys_clock_khz(300000, true);
 
-    // sleep_ms(50);
     stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
 
     /* set up core1 as high priority bus access */
     bus_ctrl_hw->priority |= BUSCTRL_BUS_PRIORITY_PROC1_BITS;
     while (!bus_ctrl_hw->priority_ack) {}
 
-    printf("\n\n\nStarted! Clock %d; bus priority 0x%X\n", (int)clock_get_hz(clk_sys), bus_ctrl_hw->priority);
+    printf("\n\n\nStarted! Clock %d; bus priority 0x%X\n", (int)clock_get_hz(clk_sys), (unsigned)bus_ctrl_hw->priority);
 
     psram_init();
     sd_init();

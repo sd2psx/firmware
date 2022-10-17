@@ -375,10 +375,8 @@ void memory_card_main(void) {
 
     my_gpio_set_irq_enabled_with_callback(PIN_PSX_SEL, GPIO_IRQ_EDGE_RISE, 1, card_deselected);
 
-    debug_printf("slew %d drive %d\n", gpio_get_slew_rate(20), gpio_get_drive_strength(20));
-    gpio_set_slew_rate(20, GPIO_SLEW_RATE_FAST);
-    gpio_set_drive_strength(20, GPIO_DRIVE_STRENGTH_12MA);
-    debug_printf("slew %d drive %d\n", gpio_get_slew_rate(20), gpio_get_drive_strength(20));
+    gpio_set_slew_rate(PIN_PSX_DAT, GPIO_SLEW_RATE_FAST);
+    gpio_set_drive_strength(PIN_PSX_DAT, GPIO_DRIVE_STRENGTH_12MA);
     mc_main();
 }
 
