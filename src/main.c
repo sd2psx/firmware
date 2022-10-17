@@ -5,6 +5,7 @@
 #include "hardware/gpio.h"
 #include "hardware/clocks.h"
 #include "hardware/vreg.h"
+#include "hardware/structs/bus_ctrl.h"
 
 #include "memory_card.h"
 #include "gui.h"
@@ -60,9 +61,12 @@ int main() {
 
     // sleep_ms(50);
     stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
-    // sleep_ms(50);
 
-    printf("\n\n\nStarted! Clock %d\n", (int)clock_get_hz(clk_sys));
+    /* set up core1 as high priority bus access */
+    bus_ctrl_hw->priority |= BUSCTRL_BUS_PRIORITY_PROC1_BITS;
+    while (!bus_ctrl_hw->priority_ack) {}
+
+    printf("\n\n\nStarted! Clock %d; bus priority 0x%X\n", (int)clock_get_hz(clk_sys), bus_ctrl_hw->priority);
 
     psram_init();
     sd_init();
