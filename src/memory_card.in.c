@@ -161,8 +161,8 @@ if (ch == 0x11) {
                 psram_read_dma(read_sector * 512, &readtmp, 512+4);
                 // TODO: remove this if safe
                 // must make sure the dma completes for first byte before we start reading below
-                dma_channel_wait_for_finish_blocking(0);
-                dma_channel_wait_for_finish_blocking(1);
+                dma_channel_wait_for_finish_blocking(PIO_SPI_DMA_RX_CHAN);
+                dma_channel_wait_for_finish_blocking(PIO_SPI_DMA_TX_CHAN);
             }
             readptr = 0;
 

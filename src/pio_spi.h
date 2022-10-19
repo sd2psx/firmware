@@ -9,6 +9,9 @@
 #include "hardware/pio.h"
 #include "spi.pio.h"
 
+#define PIO_SPI_DMA_RX_CHAN 0
+#define PIO_SPI_DMA_TX_CHAN 1
+
 typedef struct pio_spi_inst {
     PIO pio;
     uint sm;

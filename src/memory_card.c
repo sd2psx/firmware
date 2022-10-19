@@ -11,6 +11,7 @@
 #include "des.h"
 #include "dirty.h"
 #include "psram.h"
+#include "pio_spi.h"
 
 #include <string.h>
 
