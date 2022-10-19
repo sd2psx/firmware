@@ -26,6 +26,7 @@ add_executable(sd2psx
     src/keys.c
     src/des.c
     src/dirty.c
+    src/cardman.c
 
     src/arduino_wrapper/sd.cpp
     src/arduino_wrapper/SPI.cpp

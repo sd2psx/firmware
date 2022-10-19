@@ -15,6 +15,7 @@
 #include "psram.h"
 #include "sd.h"
 #include "dirty.h"
+#include "cardman.h"
 
 /* reboot to bootloader if either button is held on startup
    to make the device easier to flash when assembled inside case */
@@ -63,6 +64,7 @@ int main() {
 
     psram_init();
     sd_init();
+    cardman_init();
     dirty_init();
     gui_init();
 
