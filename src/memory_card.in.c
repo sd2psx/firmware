@@ -479,7 +479,6 @@ if (ch == 0x11) {
         debug_printf("unknown %02X -> %02X\n", ch, subcmd);
     }
 } else if (ch == 0xF1 || ch == 0xF2) {
-    static uint8_t hostkey[9];
     /* session key encrypt */
     send(0xFF);
     recv();
