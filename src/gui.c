@@ -9,6 +9,7 @@
 #include "input.h"
 #include "ui_menu.h"
 #include "memory_card.h"
+#include "cardman.h"
 
 #include "ui_theme_mono.h"
 
@@ -18,6 +19,7 @@ static lv_obj_t *g_navbar;
 
 static lv_obj_t *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl;
 
 static int have_oled;
 
@@ -78,19 +80,34 @@ static void evt_scr_main(lv_event_t *event) {
             lv_event_stop_bubbling(event);
         }
 
-        if (key == INPUT_KEY_PREV) {
-            printf("Shutting down memory card... ");
+        // TODO: if there was a card op recently (1s timeout?), should refuse to switch
+        if (key == INPUT_KEY_PREV || key == INPUT_KEY_NEXT || key == INPUT_KEY_BACK || key == INPUT_KEY_ENTER) {
             uint64_t start = time_us_64();
+            printf("switching from card=%d chan=%d\n", cardman_get_idx(), cardman_get_channel());
             memory_card_exit();
-            uint64_t end = time_us_64();
-            printf("DONE! (%d us)\n", (int)(end - start));
-        } else if (key == INPUT_KEY_NEXT) {
-            printf("Starting memory card... ");
-            uint64_t start = time_us_64();
+
+            switch (key) {
+            case INPUT_KEY_PREV:
+                cardman_prev_channel();
+                break;
+            case INPUT_KEY_NEXT:
+                cardman_next_channel();
+                break;
+            case INPUT_KEY_BACK:
+                cardman_prev_idx();
+                break;
+            case INPUT_KEY_ENTER:
+                cardman_next_idx();
+                break;
+            }
+
             memory_card_enter();
+
             uint64_t end = time_us_64();
-            printf("DONE! (%d us)\n", (int)(end - start));
+            printf("new card=%d chan=%d\n", cardman_get_idx(), cardman_get_channel());
+            printf("done! took %.2f s\n", (end - start) / 1e6);
         }
+
     }
 }
 
@@ -154,34 +171,36 @@ static void create_main_screen(void) {
     lv_obj_add_style(lbl, &style_inv, 0);
     lv_obj_set_width(lbl, 128);
     lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_text(lbl, "Memory Card");
+    lv_label_set_text(lbl, "PS2 Memory Card");
 
     lbl = lv_label_create(scr_main);
     lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(lbl, 0, 16);
+    lv_obj_set_pos(lbl, 0, 24);
     lv_label_set_text(lbl, "Card");
 
     lbl = lv_label_create(scr_main);
     lv_obj_set_align(lbl, LV_ALIGN_TOP_RIGHT);
-    lv_obj_set_pos(lbl, 0, 16);
-    lv_label_set_text(lbl, "SLPM-01234");
+    lv_obj_set_pos(lbl, 0, 24);
+    lv_label_set_text(lbl, "");
+    scr_main_idx_lbl = lbl;
 
     lbl = lv_label_create(scr_main);
     lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(lbl, 0, 24);
+    lv_obj_set_pos(lbl, 0, 32);
     lv_label_set_text(lbl, "Channel");
 
     lbl = lv_label_create(scr_main);
     lv_obj_set_align(lbl, LV_ALIGN_TOP_RIGHT);
-    lv_obj_set_pos(lbl, 0, 24);
-    lv_label_set_text(lbl, "7");
+    lv_obj_set_pos(lbl, 0, 32);
+    lv_label_set_text(lbl, "");
+    scr_main_channel_lbl = lbl;
 
-    lbl = lv_label_create(scr_main);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(lbl, 0, 40);
-    lv_label_set_text(lbl, "Very long game title goes here");
-    lv_label_set_long_mode(lbl, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    lv_obj_set_width(lbl, 128);
+    // lbl = lv_label_create(scr_main);
+    // lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
+    // lv_obj_set_pos(lbl, 0, 40);
+    // lv_label_set_text(lbl, "Very long game title goes here");
+    // lv_label_set_long_mode(lbl, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    // lv_obj_set_width(lbl, 128);
 
     lbl = lv_label_create(scr_main);
     lv_obj_set_align(lbl, LV_ALIGN_BOTTOM_LEFT);
@@ -345,8 +364,8 @@ static void create_ui(void) {
     create_freepsxboot_screen();
 
     /* start at the main screen - TODO - or freepsxboot */
-    UI_GOTO_SCREEN(scr_freepsxboot);
-    // UI_GOTO_SCREEN(scr_main);
+    // UI_GOTO_SCREEN(scr_freepsxboot);
+    UI_GOTO_SCREEN(scr_main);
 }
 
 void gui_init(void) {
@@ -399,6 +418,19 @@ void gui_task(void) {
     uint64_t diff_ms = (now_time - prev_time) / 1000;
 
     input_update_display(g_navbar);
+
+    static int displayed_card_idx = -1;
+    static int displayed_card_channel = -1;
+    static char card_idx_s[8];
+    static char card_channel_s[8];
+    if (displayed_card_idx != cardman_get_idx() || displayed_card_channel != cardman_get_channel()) {
+        displayed_card_idx = cardman_get_idx();
+        displayed_card_channel = cardman_get_channel();
+        snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
+        snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
+        lv_label_set_text(scr_main_idx_lbl, card_idx_s);
+        lv_label_set_text(scr_main_channel_lbl, card_channel_s);
+    }
 
     if (diff_ms) {
         prev_time += diff_ms * 1000;

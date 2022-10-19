@@ -286,8 +286,10 @@ void __time_critical_func(mc_main_loop)(void) {
         uint8_t cmd, ch;
 
 NEXTCMD:
-        while (!reset)
-        {}
+        while (!reset && !reset && !reset && !reset && !reset) {
+            if (mc_exit_request)
+                goto EXIT_REQUEST;
+        }
         reset = 0;
 
         recvfirst();

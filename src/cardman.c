@@ -141,13 +141,23 @@ void cardman_prev_channel(void) {
 void cardman_next_idx(void) {
     cardman_close();
     card_idx += 1;
+    card_chan = 1;
     cardman_open();
 }
 
 void cardman_prev_idx(void) {
     cardman_close();
     card_idx -= 1;
+    card_chan = 1;
     if (card_idx < IDX_MIN)
         card_idx = IDX_MIN;
     cardman_open();
+}
+
+int cardman_get_idx(void) {
+    return card_idx;
+}
+
+int cardman_get_channel(void) {
+    return card_chan;
 }
