@@ -23,7 +23,6 @@ static lv_style_t style_inv;
 #define COLOR_BG      lv_color_black()
 
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
-#if 0
     ssd1306_clear(&oled_disp);
 
     for(int y = area->y1; y <= area->y2; y++) {
@@ -35,10 +34,6 @@ static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t 
     }
 
     ssd1306_show(&oled_disp);
-#else
-    (void)area;
-    (void)color_p;
-#endif
     lv_disp_flush_ready(disp_drv);
 }
 
