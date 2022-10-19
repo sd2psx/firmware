@@ -19,21 +19,25 @@ static lv_obj_t *g_navbar;
 static lv_obj_t *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
 
+static int have_oled;
+
 #define COLOR_FG      lv_color_white()
 #define COLOR_BG      lv_color_black()
 
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
-    ssd1306_clear(&oled_disp);
+    if (have_oled) {
+        ssd1306_clear(&oled_disp);
 
-    for(int y = area->y1; y <= area->y2; y++) {
-        for(int x = area->x1; x <= area->x2; x++) {
-            if (color_p->full)
-                ssd1306_draw_pixel(&oled_disp, x, y);
-            color_p++;
+        for(int y = area->y1; y <= area->y2; y++) {
+            for(int x = area->x1; x <= area->x2; x++) {
+                if (color_p->full)
+                    ssd1306_draw_pixel(&oled_disp, x, y);
+                color_p++;
+            }
         }
-    }
 
-    ssd1306_show(&oled_disp);
+        ssd1306_show(&oled_disp);
+    }
     lv_disp_flush_ready(disp_drv);
 }
 
@@ -352,7 +356,7 @@ void gui_init(void) {
     gpio_pull_up(OLED_I2C_SDA);
     gpio_pull_up(OLED_I2C_SCL);
 
-    ssd1306_init(&oled_disp, DISPLAY_WIDTH, DISPLAY_HEIGHT, 0x3C, OLED_I2C_PERIPH);
+    have_oled = ssd1306_init(&oled_disp, DISPLAY_WIDTH, DISPLAY_HEIGHT, 0x3C, OLED_I2C_PERIPH);
 
     lv_init();
 
