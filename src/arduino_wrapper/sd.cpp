@@ -83,3 +83,12 @@ extern "C" int sd_seek(int fd, uint64_t pos) {
     /* return 1 on error */
     return files[fd].seekSet(pos) != true;
 }
+
+extern "C" int sd_mkdir(const char *path) {
+    /* return 1 on error */
+    return sd.mkdir(path) != true;
+}
+
+extern "C" int sd_exists(const char *path) {
+    return sd.exists(path);
+}
