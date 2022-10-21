@@ -72,7 +72,7 @@ int main() {
 
     printf("Starting memory card... ");
     uint64_t start = time_us_64();
-    memory_card_enter();
+    gui_do_card_switch();
     uint64_t end = time_us_64();
     printf("DONE! (%d us)\n", (int)(end - start));
 

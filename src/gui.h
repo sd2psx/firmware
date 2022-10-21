@@ -4,6 +4,7 @@
 
 void gui_init(void);
 void gui_task(void);
+void gui_do_card_switch(void);
 
 #define UI_GOTO_SCREEN(scr) do { \
     lv_scr_load(scr); \

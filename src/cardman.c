@@ -29,7 +29,6 @@ static int cardprog_wr;
 void cardman_init(void) {
     // TODO: should load last used card from eeprom
     card_idx = card_chan = 1;
-    cardman_open();
 }
 
 int cardman_write_sector(int sector, void *buf512) {

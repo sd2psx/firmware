@@ -464,6 +464,23 @@ void gui_init(void) {
     create_ui();
 }
 
+void gui_do_card_switch(void) {
+    printf("switching the card now!\n");
+    UI_GOTO_SCREEN(scr_card_switch);
+
+    uint64_t start = time_us_64();
+    cardman_set_progress_cb(reload_card_cb);
+    cardman_open();
+    cardman_set_progress_cb(NULL);
+    memory_card_enter();
+    uint64_t end = time_us_64();
+    printf("full card switch took = %.2f s\n", (end - start) / 1e6);
+
+    UI_GOTO_SCREEN(scr_main);
+
+    input_flush();
+}
+
 void gui_task(void) {
     input_update_display(g_navbar);
 
@@ -482,20 +499,7 @@ void gui_task(void) {
 
     if (switching_card && switching_card_timeout < time_us_64()) {
         switching_card = 0;
-        printf("switching the card now!\n");
-        UI_GOTO_SCREEN(scr_card_switch);
-
-        uint64_t start = time_us_64();
-        cardman_set_progress_cb(reload_card_cb);
-        cardman_open();
-        cardman_set_progress_cb(NULL);
-        memory_card_enter();
-        uint64_t end = time_us_64();
-        printf("full card switch took = %.2f s\n", (end - start) / 1e6);
-
-        UI_GOTO_SCREEN(scr_main);
-
-        input_flush();
+        gui_do_card_switch();
     }
 
     gui_tick();
