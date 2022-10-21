@@ -469,7 +469,7 @@ void gui_task(void) {
         cardman_set_progress_cb(NULL);
         memory_card_enter();
         uint64_t end = time_us_64();
-        printf("full card switch took = %2.f s\n", (end - start) / 1e6);
+        printf("full card switch took = %.2f s\n", (end - start) / 1e6);
 
         lv_obj_add_flag(g_progress_bar, LV_OBJ_FLAG_HIDDEN);
 
