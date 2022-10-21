@@ -91,6 +91,9 @@ static void reload_card_cb(int progress) {
     prev_progress = progress;
     line_points[1].x = DISPLAY_WIDTH * progress / 100;
     lv_line_set_points(g_progress_bar, line_points, 2);
+
+    lv_label_set_text(g_progress_text, cardman_get_progress_text());
+
     gui_tick();
 }
 

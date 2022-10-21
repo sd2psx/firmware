@@ -16,3 +16,4 @@ void cardman_prev_idx(void);
 typedef void (*cardman_cb_t)(int);
 
 void cardman_set_progress_cb(cardman_cb_t func);
+char *cardman_get_progress_text(void);
