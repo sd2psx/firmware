@@ -143,6 +143,10 @@ int input_get_pressed(void) {
     return pressed;
 }
 
+void input_flush(void) {
+    last_pressed = 0;
+}
+
 int input_is_down(int idx) {
     return buttons[idx].state;
 }

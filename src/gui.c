@@ -22,6 +22,8 @@ static lv_style_t style_inv;
 static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl;
 
 static int have_oled;
+static int switching_card;
+static uint64_t switching_card_timeout;
 
 #define COLOR_FG      lv_color_white()
 #define COLOR_BG      lv_color_black()
@@ -82,9 +84,8 @@ static void evt_scr_main(lv_event_t *event) {
 
         // TODO: if there was a card op recently (1s timeout?), should refuse to switch
         if (key == INPUT_KEY_PREV || key == INPUT_KEY_NEXT || key == INPUT_KEY_BACK || key == INPUT_KEY_ENTER) {
-            uint64_t start = time_us_64();
-            printf("switching from card=%d chan=%d\n", cardman_get_idx(), cardman_get_channel());
             memory_card_exit();
+            cardman_close();
 
             switch (key) {
             case INPUT_KEY_PREV:
@@ -101,11 +102,9 @@ static void evt_scr_main(lv_event_t *event) {
                 break;
             }
 
-            memory_card_enter();
-
-            uint64_t end = time_us_64();
             printf("new card=%d chan=%d\n", cardman_get_idx(), cardman_get_channel());
-            printf("done! took %.2f s\n", (end - start) / 1e6);
+            switching_card = 1;
+            switching_card_timeout = time_us_64() + 1500 * 1000;
         }
 
     }
@@ -430,6 +429,19 @@ void gui_task(void) {
         snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
         lv_label_set_text(scr_main_idx_lbl, card_idx_s);
         lv_label_set_text(scr_main_channel_lbl, card_channel_s);
+    }
+
+    if (switching_card && switching_card_timeout < time_us_64()) {
+        switching_card = 0;
+        printf("switching the card now!\n");
+
+        uint64_t start = time_us_64();
+        cardman_open();
+        memory_card_enter();
+        uint64_t end = time_us_64();
+        printf("full card switch took = %2.f s\n", (end - start) / 1e6);
+
+        input_flush();
     }
 
     if (diff_ms) {

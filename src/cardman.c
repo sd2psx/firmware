@@ -117,41 +117,35 @@ void cardman_open(void) {
 }
 
 void cardman_close(void) {
+    if (fd < 0)
+        return;
     cardman_flush();
     sd_close(fd);
     fd = -1;
 }
 
 void cardman_next_channel(void) {
-    cardman_close();
     card_chan += 1;
     if (card_chan > CHAN_MAX)
         card_chan = CHAN_MIN;
-    cardman_open();
 }
 
 void cardman_prev_channel(void) {
-    cardman_close();
     card_chan -= 1;
     if (card_chan < CHAN_MIN)
         card_chan = CHAN_MAX;
-    cardman_open();
 }
 
 void cardman_next_idx(void) {
-    cardman_close();
     card_idx += 1;
     card_chan = 1;
-    cardman_open();
 }
 
 void cardman_prev_idx(void) {
-    cardman_close();
     card_idx -= 1;
     card_chan = 1;
     if (card_idx < IDX_MIN)
         card_idx = IDX_MIN;
-    cardman_open();
 }
 
 int cardman_get_idx(void) {

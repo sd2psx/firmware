@@ -7,6 +7,7 @@ void input_task(void);
 void input_update_display(lv_obj_t *line);
 int input_get_pressed(void);
 int input_is_down(int idx);
+void input_flush(void);
 
 enum {
     INPUT_KEY_NEXT = 50,
