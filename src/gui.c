@@ -93,6 +93,7 @@ static void gui_tick(void) {
 static void reload_card_cb(int progress) {
     static lv_point_t line_points[2] = { {0, DISPLAY_HEIGHT/2}, {0, DISPLAY_HEIGHT/2} };
     static int prev_progress;
+    progress += 5;
     if (progress/5 == prev_progress/5)
         return;
     prev_progress = progress;
