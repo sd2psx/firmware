@@ -15,9 +15,9 @@
 
 static ssd1306_t oled_disp = { .external_vcc = 0 };
 /* Displays the line at the bottom for long pressing buttons */
-static lv_obj_t *g_navbar, *g_progress_bar;
+static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text;
 
-static lv_obj_t *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
+static lv_obj_t *scr_card_switch, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
 static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl;
 
@@ -64,16 +64,8 @@ static void create_nav(void) {
     lv_style_set_line_width(&style_line, 1);
     lv_style_set_line_color(&style_line, lv_palette_main(LV_PALETTE_BLUE));
 
-    static lv_style_t style_progress;
-    lv_style_init(&style_progress);
-    lv_style_set_line_width(&style_progress, 16);
-    lv_style_set_line_color(&style_progress, lv_palette_main(LV_PALETTE_BLUE));
-
     g_navbar = lv_line_create(lv_layer_top());
     lv_obj_add_style(g_navbar, &style_line, 0);
-
-    g_progress_bar = lv_line_create(lv_layer_top());
-    lv_obj_add_style(g_progress_bar, &style_progress, 0);
 }
 
 static void gui_tick(void) {
@@ -294,6 +286,31 @@ static void create_freepsxboot_screen(void) {
     lv_obj_set_width(lbl, 128);
 }
 
+static void create_cardswitch_screen(void) {
+    scr_card_switch = ui_scr_create();
+
+    lv_obj_t *lbl = lv_label_create(scr_card_switch);
+    lv_obj_set_align(lbl, LV_ALIGN_TOP_MID);
+    lv_obj_add_style(lbl, &style_inv, 0);
+    lv_obj_set_width(lbl, 128);
+    lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_text(lbl, "Loading card");
+
+    static lv_style_t style_progress;
+    lv_style_init(&style_progress);
+    lv_style_set_line_width(&style_progress, 12);
+    lv_style_set_line_color(&style_progress, lv_palette_main(LV_PALETTE_BLUE));
+
+    g_progress_bar = lv_line_create(scr_card_switch);
+    lv_obj_set_width(g_progress_bar, DISPLAY_WIDTH);
+    lv_obj_add_style(g_progress_bar, &style_progress, 0);
+
+    g_progress_text = lv_label_create(scr_card_switch);
+    lv_obj_set_align(g_progress_text, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_pos(g_progress_text, 0, DISPLAY_HEIGHT-9);
+    lv_label_set_text(g_progress_text, "Read XXX kB/s");
+}
+
 static void create_menu_screen(void) {
     /* Menu screen accessible by pressing the menu button at main */
     scr_menu = ui_scr_create();
@@ -394,6 +411,7 @@ static void create_ui(void) {
     create_nav();
     create_main_screen();
     create_menu_screen();
+    create_cardswitch_screen();
     create_freepsxboot_screen();
 
     /* start at the main screen - TODO - or freepsxboot */
@@ -462,7 +480,7 @@ void gui_task(void) {
     if (switching_card && switching_card_timeout < time_us_64()) {
         switching_card = 0;
         printf("switching the card now!\n");
-        lv_obj_clear_flag(g_progress_bar, LV_OBJ_FLAG_HIDDEN);
+        UI_GOTO_SCREEN(scr_card_switch);
 
         uint64_t start = time_us_64();
         cardman_set_progress_cb(reload_card_cb);
@@ -472,7 +490,7 @@ void gui_task(void) {
         uint64_t end = time_us_64();
         printf("full card switch took = %.2f s\n", (end - start) / 1e6);
 
-        lv_obj_add_flag(g_progress_bar, LV_OBJ_FLAG_HIDDEN);
+        UI_GOTO_SCREEN(scr_main);
 
         input_flush();
     }
