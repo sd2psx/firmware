@@ -59,32 +59,6 @@ static void ensuredirs(void) {
         fatal("error creating directories");
 }
 
-static void make_empty_img(const char *path) {
-    uint64_t start = time_us_64();
-    printf("create new image at %s... ", path);
-
-    if (sd_exists(path))
-        fatal("refuse to recreate existing path");
-
-    int fd = sd_open(path, O_RDWR | O_CREAT | O_TRUNC);
-    if (fd < 0)
-        fatal("cannot open for creating new card");
-
-    memset(flushbuf, 0xFF, sizeof(flushbuf));
-    for (size_t pos = 0; pos < CARD_SIZE; pos += BLOCK_SIZE) {
-        if (sd_write(fd, flushbuf, BLOCK_SIZE) != BLOCK_SIZE)
-            fatal("cannot init memcard");
-    }
-
-    sd_close(fd);
-
-    uint64_t end = time_us_64();
-    printf("OK!\n");
-
-    printf("took = %.2f s; SD write speed = %.2f kB/s\n", (end - start) / 1e6,
-        1000000.0 * CARD_SIZE / (end - start) / 1024);
-}
-
 void cardman_open(void) {
     char path[64];
 
@@ -93,31 +67,53 @@ void cardman_open(void) {
 
     printf("Switching to card path = %s\n", path);
 
-    // TODO: should special case this for faster ops otherwise it's 2x slower than reusing a card
-    if (!sd_exists(path))
-        make_empty_img(path);
+    if (!sd_exists(path)) {
+        fd = sd_open(path, O_RDWR | O_CREAT | O_TRUNC);
 
-    fd = sd_open(path, O_RDWR);
+        if (fd < 0)
+            fatal("cannot open for creating new card");
 
-    if (fd < 0)
-        fatal("cannot open card");
+        printf("create new image at %s... ", path);
+        uint64_t start = time_us_64();
 
-    /* read 8 megs of card image */
-    printf("reading card.... ");
-    uint64_t start = time_us_64();
-    for (size_t pos = 0; pos < CARD_SIZE; pos += BLOCK_SIZE) {
-        if (sd_read(fd, flushbuf, BLOCK_SIZE) != BLOCK_SIZE)
-            fatal("cannot read memcard");
-        psram_write(pos, flushbuf, BLOCK_SIZE);
+        memset(flushbuf, 0xFF, sizeof(flushbuf));
+        for (size_t pos = 0; pos < CARD_SIZE; pos += BLOCK_SIZE) {
+            if (sd_write(fd, flushbuf, BLOCK_SIZE) != BLOCK_SIZE)
+                fatal("cannot init memcard");
+            psram_write(pos, flushbuf, BLOCK_SIZE);
 
-        if (cardman_cb)
-            cardman_cb(100 * pos / CARD_SIZE);
+            if (cardman_cb)
+                cardman_cb(100 * pos / CARD_SIZE);
+        }
+
+        uint64_t end = time_us_64();
+        printf("OK!\n");
+
+        printf("took = %.2f s; SD write speed = %.2f kB/s\n", (end - start) / 1e6,
+            1000000.0 * CARD_SIZE / (end - start) / 1024);
+    } else {
+        fd = sd_open(path, O_RDWR);
+
+        if (fd < 0)
+            fatal("cannot open card");
+
+        /* read 8 megs of card image */
+        printf("reading card.... ");
+        uint64_t start = time_us_64();
+        for (size_t pos = 0; pos < CARD_SIZE; pos += BLOCK_SIZE) {
+            if (sd_read(fd, flushbuf, BLOCK_SIZE) != BLOCK_SIZE)
+                fatal("cannot read memcard");
+            psram_write(pos, flushbuf, BLOCK_SIZE);
+
+            if (cardman_cb)
+                cardman_cb(100 * pos / CARD_SIZE);
+        }
+        uint64_t end = time_us_64();
+        printf("OK!\n");
+
+        printf("took = %.2f s; SD read speed = %.2f kB/s\n", (end - start) / 1e6,
+            1000000.0 * CARD_SIZE / (end - start) / 1024);
     }
-    uint64_t end = time_us_64();
-    printf("OK!\n");
-
-    printf("took = %.2f s; SD read speed = %.2f kB/s\n", (end - start) / 1e6,
-        1000000.0 * CARD_SIZE / (end - start) / 1024);
 }
 
 void cardman_close(void) {
