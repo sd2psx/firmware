@@ -21,6 +21,7 @@ static int fd = -1;
 
 static int card_idx;
 static int card_chan;
+static cardman_cb_t cardman_cb;
 
 void cardman_init(void) {
     // TODO: should load last used card from eeprom
@@ -108,6 +109,9 @@ void cardman_open(void) {
         if (sd_read(fd, flushbuf, BLOCK_SIZE) != BLOCK_SIZE)
             fatal("cannot read memcard");
         psram_write(pos, flushbuf, BLOCK_SIZE);
+
+        if (cardman_cb)
+            cardman_cb(100 * pos / CARD_SIZE);
     }
     uint64_t end = time_us_64();
     printf("OK!\n");
@@ -154,4 +158,8 @@ int cardman_get_idx(void) {
 
 int cardman_get_channel(void) {
     return card_chan;
+}
+
+void cardman_set_progress_cb(cardman_cb_t func) {
+    cardman_cb = func;
 }

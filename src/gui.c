@@ -15,7 +15,7 @@
 
 static ssd1306_t oled_disp = { .external_vcc = 0 };
 /* Displays the line at the bottom for long pressing buttons */
-static lv_obj_t *g_navbar;
+static lv_obj_t *g_navbar, *g_progress_bar;
 
 static lv_obj_t *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
@@ -64,8 +64,41 @@ static void create_nav(void) {
     lv_style_set_line_width(&style_line, 1);
     lv_style_set_line_color(&style_line, lv_palette_main(LV_PALETTE_BLUE));
 
+    static lv_style_t style_progress;
+    lv_style_init(&style_progress);
+    lv_style_set_line_width(&style_progress, 16);
+    lv_style_set_line_color(&style_progress, lv_palette_main(LV_PALETTE_BLUE));
+
     g_navbar = lv_line_create(lv_layer_top());
     lv_obj_add_style(g_navbar, &style_line, 0);
+
+    g_progress_bar = lv_line_create(lv_layer_top());
+    lv_obj_add_style(g_progress_bar, &style_progress, 0);
+}
+
+static void gui_tick(void) {
+    static uint64_t prev_time;
+    if (!prev_time)
+        prev_time = time_us_64();
+    uint64_t now_time = time_us_64();
+    uint64_t diff_ms = (now_time - prev_time) / 1000;
+
+    if (diff_ms) {
+        prev_time += diff_ms * 1000;
+        lv_tick_inc(diff_ms);
+        lv_timer_handler();
+    }
+}
+
+static void reload_card_cb(int progress) {
+    static lv_point_t line_points[2] = { {0, DISPLAY_HEIGHT/2}, {0, DISPLAY_HEIGHT/2} };
+    static int prev_progress;
+    if (progress/5 == prev_progress/5)
+        return;
+    prev_progress = progress;
+    line_points[1].x = DISPLAY_WIDTH * progress / 100;
+    lv_line_set_points(g_progress_bar, line_points, 2);
+    gui_tick();
 }
 
 static void evt_scr_main(lv_event_t *event) {
@@ -410,12 +443,6 @@ void gui_init(void) {
 }
 
 void gui_task(void) {
-    static uint64_t prev_time;
-    if (!prev_time)
-        prev_time = time_us_64();
-    uint64_t now_time = time_us_64();
-    uint64_t diff_ms = (now_time - prev_time) / 1000;
-
     input_update_display(g_navbar);
 
     static int displayed_card_idx = -1;
@@ -434,19 +461,20 @@ void gui_task(void) {
     if (switching_card && switching_card_timeout < time_us_64()) {
         switching_card = 0;
         printf("switching the card now!\n");
+        lv_obj_clear_flag(g_progress_bar, LV_OBJ_FLAG_HIDDEN);
 
         uint64_t start = time_us_64();
+        cardman_set_progress_cb(reload_card_cb);
         cardman_open();
+        cardman_set_progress_cb(NULL);
         memory_card_enter();
         uint64_t end = time_us_64();
         printf("full card switch took = %2.f s\n", (end - start) / 1e6);
 
+        lv_obj_add_flag(g_progress_bar, LV_OBJ_FLAG_HIDDEN);
+
         input_flush();
     }
 
-    if (diff_ms) {
-        prev_time += diff_ms * 1000;
-        lv_tick_inc(diff_ms);
-        lv_timer_handler();
-    }
+    gui_tick();
 }

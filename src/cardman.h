@@ -12,3 +12,7 @@ void cardman_next_channel(void);
 void cardman_prev_channel(void);
 void cardman_next_idx(void);
 void cardman_prev_idx(void);
+
+typedef void (*cardman_cb_t)(int);
+
+void cardman_set_progress_cb(cardman_cb_t func);
