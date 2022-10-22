@@ -5,6 +5,10 @@
 
 #include "hardware/gpio.h"
 
+extern "C" {
+#include "debug.h"
+}
+
 #include <stdio.h>
 
 #define NUM_FILES 8
@@ -18,7 +22,9 @@ extern "C" void sd_init() {
     SPI1.setSCK(SD_SCK);
     SPI1.setCS(SD_CS);
 
-    sd.begin(SdSpiConfig(SD_CS, DEDICATED_SPI, SD_BAUD, &SPI1));
+    int ret = sd.begin(SdSpiConfig(SD_CS, DEDICATED_SPI, SD_BAUD, &SPI1));
+    if (ret != 1)
+        fatal("failed to mount the card");
 }
 
 void sdCsInit(SdCsPin_t pin) {
@@ -36,7 +42,7 @@ extern "C" int sd_open(const char *path, int oflag) {
     for (fd = 0; fd < NUM_FILES; ++fd)
         if (!files[fd].isOpen())
             break;
-    
+
     /* no fd available */
     if (fd >= NUM_FILES)
         return -1;
