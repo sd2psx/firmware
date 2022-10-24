@@ -511,7 +511,7 @@ void gui_task(void) {
         lv_label_set_text(scr_main_channel_lbl, card_channel_s);
     }
 
-    if (switching_card && switching_card_timeout < time_us_64()) {
+    if (switching_card && switching_card_timeout < time_us_64() && !input_is_any_down()) {
         switching_card = 0;
         gui_do_card_switch();
     }

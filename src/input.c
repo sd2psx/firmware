@@ -150,3 +150,7 @@ void input_flush(void) {
 int input_is_down(int idx) {
     return buttons[idx].state;
 }
+
+int input_is_any_down(void) {
+    return buttons[0].state || buttons[1].state;
+}
