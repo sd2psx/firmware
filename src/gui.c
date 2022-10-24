@@ -516,10 +516,12 @@ void gui_task(void) {
         gui_do_card_switch();
     }
 
-    if (dirty_activity)
+    if (dirty_activity) {
+        input_flush();
         lv_obj_clear_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
-    else
+    } else {
         lv_obj_add_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
+    }
 
     gui_tick();
 }
