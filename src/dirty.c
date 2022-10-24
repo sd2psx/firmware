@@ -114,7 +114,7 @@ void dirty_task(void) {
     if (hit)
         printf("remain to flush - %d - this one flushed %d and took %d ms\n", num_after, hit, (int)((end - start) / 1000));
 
-    if (num_after)
+    if (num_after || !dirty_lockout_expired())
         dirty_activity = 1;
     else
         dirty_activity = 0;
