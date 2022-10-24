@@ -10,12 +10,13 @@
 #include "ui_menu.h"
 #include "memory_card.h"
 #include "cardman.h"
+#include "dirty.h"
 
 #include "ui_theme_mono.h"
 
 static ssd1306_t oled_disp = { .external_vcc = 0 };
 /* Displays the line at the bottom for long pressing buttons */
-static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text;
+static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text, *g_activity_frame;
 
 static lv_obj_t *scr_card_switch, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
@@ -66,6 +67,19 @@ static void create_nav(void) {
 
     g_navbar = lv_line_create(lv_layer_top());
     lv_obj_add_style(g_navbar, &style_line, 0);
+
+    static lv_style_t style_frame;
+    lv_style_init(&style_frame);
+    lv_style_set_line_width(&style_frame, 20);
+    lv_style_set_line_color(&style_frame, lv_palette_main(LV_PALETTE_BLUE));
+
+    g_activity_frame = lv_line_create(lv_layer_top());
+    lv_obj_add_style(g_activity_frame, &style_frame, 0);
+
+    static lv_point_t line_points[5] = { {0,0}, {DISPLAY_WIDTH,0}, {DISPLAY_WIDTH,DISPLAY_HEIGHT}, {0,DISPLAY_HEIGHT}, {0,0} };
+    lv_line_set_points(g_activity_frame, line_points, 5);
+
+    lv_obj_add_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
 }
 
 static void gui_tick(void) {
@@ -501,6 +515,11 @@ void gui_task(void) {
         switching_card = 0;
         gui_do_card_switch();
     }
+
+    if (dirty_activity)
+        lv_obj_clear_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
+    else
+        lv_obj_add_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
 
     gui_tick();
 }

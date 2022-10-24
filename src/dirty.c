@@ -7,7 +7,7 @@
 spin_lock_t *dirty_spin_lock;
 volatile uint32_t dirty_lockout;
 
-int num_dirty;
+int num_dirty, dirty_activity;
 static uint16_t dirty_heap[8 * 1024 * 1024 / 512];
 static uint8_t dirty_map[8 * 1024 * 1024 / 512]; // TODO: make an actual bitmap to save 8x mem?
 
@@ -113,4 +113,9 @@ void dirty_task(void) {
 
     if (hit)
         printf("remain to flush - %d - this one flushed %d and took %d ms\n", num_after, hit, (int)((end - start) / 1000));
+
+    if (num_after)
+        dirty_activity = 1;
+    else
+        dirty_activity = 0;
 }

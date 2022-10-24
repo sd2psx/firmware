@@ -49,3 +49,4 @@ void dirty_mark(uint32_t sector);
 void dirty_task(void);
 
 extern int num_dirty;
+extern int dirty_activity;
