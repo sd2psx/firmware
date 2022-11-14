@@ -221,6 +221,10 @@ bool ui_menu_back_btn_is_root(lv_obj_t * menu, lv_obj_t * obj);
  * @param obj pointer to the menu
  */
 void ui_menu_clear_history(lv_obj_t * obj);
+
+lv_obj_t* ui_menu_find_next_focusable(lv_obj_t *parent, int index);
+lv_obj_t* ui_menu_find_prev_focusable(lv_obj_t *parent, int index);
+void ui_menu_go_back(lv_obj_t *menu);
 /**********************
  *      MACROS
  **********************/

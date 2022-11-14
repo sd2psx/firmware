@@ -182,11 +182,11 @@ static void evt_menu_page(lv_event_t *event) {
         uint32_t idx = lv_obj_get_index(cur);
         uint32_t count = lv_obj_get_child_cnt(page);
         if (key == INPUT_KEY_NEXT) {
-            lv_obj_t *next = lv_obj_get_child(page, (idx + 1) % count);
+            lv_obj_t *next = ui_menu_find_next_focusable(page, (idx + 1) % count);
             lv_group_focus_obj(next);
             lv_event_stop_bubbling(event);
         } else if (key == INPUT_KEY_PREV) {
-            lv_obj_t *prev = lv_obj_get_child(page, (idx + count - 1) % count);
+            lv_obj_t *prev = ui_menu_find_prev_focusable(page, (idx + count - 1) % count);
             lv_group_focus_obj(prev);
             lv_event_stop_bubbling(event);
         } else if (key == INPUT_KEY_ENTER) {
@@ -196,11 +196,15 @@ static void evt_menu_page(lv_event_t *event) {
             /* going back from the root page - let it handle in evt_scr_menu */
             if (ui_menu_get_cur_main_page(menu) == main_page)
                 return;
-            lv_obj_t *back_btn = ui_menu_get_main_header_back_btn(menu);
-            lv_event_send(back_btn, LV_EVENT_CLICKED, NULL);
+            ui_menu_go_back(menu);
             lv_event_stop_bubbling(event);
         }
     }
+}
+
+static void evt_civ_back(lv_event_t *event) {
+    ui_menu_go_back(menu);
+    lv_event_stop_bubbling(event);
 }
 
 static void create_main_screen(void) {
@@ -417,12 +421,32 @@ static void create_menu_screen(void) {
         lv_group_add_obj(lv_group_get_default(), ps2_page);
         lv_obj_add_event_cb(ps2_page, evt_menu_page, LV_EVENT_ALL, ps2_page);
 
+        /* deploy submenu */
+        lv_obj_t *civ_page = ui_menu_page_create(menu, "Deploy CIV.bin");
+        {
+            lv_obj_add_flag(civ_page, LV_OBJ_FLAG_EVENT_BUBBLE);
+            lv_group_add_obj(lv_group_get_default(), civ_page);
+            lv_obj_add_event_cb(civ_page, evt_menu_page, LV_EVENT_ALL, civ_page);
+
+            cont = ui_menu_cont_create(civ_page);
+            label = lv_label_create(cont);
+            lv_label_set_text(label, "\nerror\ngoes here\n");
+
+            cont = ui_menu_cont_create(civ_page);
+            lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+            lv_group_add_obj(lv_group_get_default(), cont);
+            label = lv_label_create(cont);
+            lv_label_set_text(label, "Back");
+            lv_obj_add_event_cb(cont, evt_civ_back, LV_EVENT_CLICKED, NULL);
+        }
+
         cont = ui_menu_cont_create(ps2_page);
         lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
         lv_group_add_obj(lv_group_get_default(), cont);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Deploy CIV.bin");
+        ui_menu_set_load_page_event(menu, cont, civ_page);
     }
 
     /* Main menu */

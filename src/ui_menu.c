@@ -182,6 +182,33 @@ void ui_menu_refr(lv_obj_t * obj)
     ui_menu_set_page(obj, page);
 }
 
+lv_obj_t* ui_menu_find_next_focusable(lv_obj_t *parent, int index) {
+    int count = lv_obj_get_child_cnt(parent);
+    for (int i = 0; i < count; ++i) {
+        lv_obj_t *child = lv_obj_get_child(parent, (index + i) % count);
+        if (lv_obj_get_group(child))
+            return child;
+    }
+
+    return NULL;
+}
+
+lv_obj_t* ui_menu_find_prev_focusable(lv_obj_t *parent, int index) {
+    int count = lv_obj_get_child_cnt(parent);
+    for (int i = 0; i < count; ++i) {
+        lv_obj_t *child = lv_obj_get_child(parent, (index + count - i) % count);
+        if (lv_obj_get_group(child))
+            return child;
+    }
+
+    return NULL;
+}
+
+void ui_menu_go_back(lv_obj_t *menu) {
+    lv_obj_t *back_btn = ui_menu_get_main_header_back_btn(menu);
+    lv_event_send(back_btn, LV_EVENT_CLICKED, NULL);
+}
+
 /*=====================
  * Setter functions
  *====================*/
@@ -255,7 +282,7 @@ void ui_menu_set_page(lv_obj_t * obj, lv_obj_t * page)
 
     if (page) {
         uint8_t selected_item = ((ui_menu_page_t*)page)->selected_item;
-        lv_obj_t *focus = lv_obj_get_child(page, selected_item);
+        lv_obj_t *focus = ui_menu_find_next_focusable(page, selected_item);
         lv_group_focus_obj(focus);
     }
 
