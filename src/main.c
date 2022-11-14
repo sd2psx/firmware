@@ -16,6 +16,7 @@
 #include "sd.h"
 #include "dirty.h"
 #include "cardman.h"
+#include "keystore.h"
 
 /* reboot to bootloader if either button is held on startup
    to make the device easier to flash when assembled inside case */
@@ -62,6 +63,7 @@ int main() {
 
     printf("\n\n\nStarted! Clock %d; bus priority 0x%X\n", (int)clock_get_hz(clk_sys), (unsigned)bus_ctrl_hw->priority);
 
+    keystore_init();
     psram_init();
     sd_init();
     cardman_init();

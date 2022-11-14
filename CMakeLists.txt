@@ -23,10 +23,10 @@ add_executable(sd2psx
     src/psram.c
     src/ui_menu.c
     src/ui_theme_mono.c
-    src/keys.c
     src/des.c
     src/dirty.c
     src/cardman.c
+    src/keystore.c
 
     src/arduino_wrapper/sd.cpp
     src/arduino_wrapper/SPI.cpp

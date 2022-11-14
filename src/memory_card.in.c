@@ -257,12 +257,12 @@ if (ch == 0x11) {
     send(0xFF); recv();
     send(0x2B); recv();
     send(term);
-} else if (ch == 0xF7) {
+} else if ((ch == 0xF7) && ps2_magicgate) { // TODO: it fails to get detected at all when ps2_magicgate==0, check if it's intentional
     /* SIO_MEMCARD_KEY_SELECT */
     send(0xFF); recv();
     send(0x2B); recv();
     send(term);
-} else if (ch == 0xF0) {
+} else if ((ch == 0xF0) && ps2_magicgate) {
     /* auth stuff */
     send(0xFF);
     recv();
@@ -478,7 +478,7 @@ if (ch == 0x11) {
     } else {
         debug_printf("unknown %02X -> %02X\n", ch, subcmd);
     }
-} else if (ch == 0xF1 || ch == 0xF2) {
+} else if ((ch == 0xF1 || ch == 0xF2) && ps2_magicgate) {
     /* session key encrypt */
     send(0xFF);
     recv();

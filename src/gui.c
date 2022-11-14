@@ -11,6 +11,7 @@
 #include "memory_card.h"
 #include "cardman.h"
 #include "dirty.h"
+#include "keystore.h"
 
 #include "ui_theme_mono.h"
 
@@ -20,7 +21,7 @@ static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text, *g_activity_frame;
 
 static lv_obj_t *scr_card_switch, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
-static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *lbl_civ_err;
 
 static int have_oled;
 static int switching_card;
@@ -210,7 +211,12 @@ static void evt_civ_back(lv_event_t *event) {
 static void evt_do_civ_deploy(lv_event_t *event) {
     (void)event;
 
-    printf("do civ deploy!!\n");
+    int ret = keystore_deploy();
+    if (ret == 0) {
+        lv_label_set_text(lbl_civ_err, "Success!\n");
+    } else {
+        lv_label_set_text(lbl_civ_err, keystore_error(ret));
+    }
 }
 
 static void scrollable_label(lv_event_t *event) {
@@ -487,7 +493,11 @@ static void create_menu_screen(void) {
 
             cont = ui_menu_cont_create(civ_page);
             label = lv_label_create(cont);
-            lv_label_set_text(label, "\nerror\ngoes here\n");
+            lv_label_set_text(label, "");
+            cont = ui_menu_cont_create(civ_page);
+            label = lv_label_create(cont);
+            lv_label_set_text(label, "");
+            lbl_civ_err = label;
 
             cont = ui_menu_cont_create(civ_page);
             lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);

@@ -7,7 +7,7 @@
 #include "config.h"
 #include "psx_spi.pio.h"
 #include "debug.h"
-#include "keys.h"
+#include "keystore.h"
 #include "des.h"
 #include "dirty.h"
 #include "psram.h"
@@ -265,11 +265,11 @@ void __time_critical_func(generateResponse)()
 {
 	doubleDesDecrypt(key, MechaChallenge1);
 	uint8_t random[8] = { 0 };
-	xor_bit(MechaChallenge1, ChallengeIV, random, 8);
+	xor_bit(MechaChallenge1, ps2_civ, random, 8);
 
 	// MechaChallenge2 and MechaChallenge3 let's the card verify the console
 
-	xor_bit(nonce, ChallengeIV, CardResponse1, 8);
+	xor_bit(nonce, ps2_civ, CardResponse1, 8);
 
 	doubleDesEncrypt(key, CardResponse1);
 
