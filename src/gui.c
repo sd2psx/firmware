@@ -340,77 +340,137 @@ static void create_menu_screen(void) {
     lv_obj_t *cont;
     lv_obj_t *label;
 
+    /* freepsxboot integration for ps1 */
     lv_obj_t *freepsxboot_page = ui_menu_page_create(menu, "FreePSXBoot");
-    lv_obj_add_flag(freepsxboot_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_group_add_obj(lv_group_get_default(), freepsxboot_page);
-    lv_obj_add_event_cb(freepsxboot_page, evt_menu_page, LV_EVENT_ALL, freepsxboot_page);
+    {
+        lv_obj_add_flag(freepsxboot_page, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), freepsxboot_page);
+        lv_obj_add_event_cb(freepsxboot_page, evt_menu_page, LV_EVENT_ALL, freepsxboot_page);
 
-    cont = ui_menu_cont_create(freepsxboot_page);
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_group_add_obj(lv_group_get_default(), cont);
-    label = lv_label_create(cont);
-    lv_obj_set_flex_grow(label, 1);
-    lv_label_set_text(label, "Enable");
-    label = lv_label_create(cont);
-    lv_label_set_text(label, "Yes");
+        cont = ui_menu_cont_create(freepsxboot_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "Enable");
+        label = lv_label_create(cont);
+        lv_label_set_text(label, "Yes");
 
-    cont = ui_menu_cont_create(freepsxboot_page);
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_group_add_obj(lv_group_get_default(), cont);
-    label = lv_label_create(cont);
-    lv_obj_set_flex_grow(label, 1);
-    lv_label_set_text(label, "Model");
-    label = lv_label_create(cont);
-    lv_label_set_text(label, "1001v3");
+        cont = ui_menu_cont_create(freepsxboot_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "Model");
+        label = lv_label_create(cont);
+        lv_label_set_text(label, "1001v3");
 
-    cont = ui_menu_cont_create(freepsxboot_page);
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_group_add_obj(lv_group_get_default(), cont);
-    label = lv_label_create(cont);
-    lv_obj_set_flex_grow(label, 1);
-    lv_label_set_text(label, "Slot");
-    label = lv_label_create(cont);
-    lv_label_set_text(label, "Slot 1");
+        cont = ui_menu_cont_create(freepsxboot_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "Slot");
+        label = lv_label_create(cont);
+        lv_label_set_text(label, "Slot 1");
+    }
 
+    /* display config */
     lv_obj_t *display_page = ui_menu_page_create(menu, "Display");
-    lv_obj_add_flag(display_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_group_add_obj(lv_group_get_default(), display_page);
-    lv_obj_add_event_cb(display_page, evt_menu_page, LV_EVENT_ALL, display_page);
+    {
+        lv_obj_add_flag(display_page, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), display_page);
+        lv_obj_add_event_cb(display_page, evt_menu_page, LV_EVENT_ALL, display_page);
 
-    cont = ui_menu_cont_create(display_page);
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_group_add_obj(lv_group_get_default(), cont);
-    label = lv_label_create(cont);
-    lv_obj_set_flex_grow(label, 1);
-    lv_label_set_text(label, "Auto off");
-    label = lv_label_create(cont);
-    lv_label_set_text(label, "30s");
+        cont = ui_menu_cont_create(display_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "Auto off");
+        label = lv_label_create(cont);
+        lv_label_set_text(label, "30s");
+    }
 
-    /* Main menu page */
+    /* ps1 */
+    lv_obj_t *ps1_page = ui_menu_page_create(menu, "PS1 Settings");
+    {
+        lv_obj_add_flag(ps1_page, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), ps1_page);
+        lv_obj_add_event_cb(ps1_page, evt_menu_page, LV_EVENT_ALL, ps1_page);
+
+        cont = ui_menu_cont_create(ps1_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "FreePSXBoot");
+        label = lv_label_create(cont);
+        lv_label_set_text(label, ">");
+        ui_menu_set_load_page_event(menu, cont, freepsxboot_page);
+    }
+
+    /* ps2 */
+    lv_obj_t *ps2_page = ui_menu_page_create(menu, "PS2 Settings");
+    {
+        lv_obj_add_flag(ps2_page, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), ps2_page);
+        lv_obj_add_event_cb(ps2_page, evt_menu_page, LV_EVENT_ALL, ps2_page);
+
+        cont = ui_menu_cont_create(ps2_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "Deploy CIV.bin");
+    }
+
+    /* Main menu */
     main_page = ui_menu_page_create(menu, NULL);
-    lv_obj_add_flag(main_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_group_add_obj(lv_group_get_default(), main_page);
-    lv_obj_add_event_cb(main_page, evt_menu_page, LV_EVENT_ALL, main_page);
+    {
+        lv_obj_add_flag(main_page, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), main_page);
+        lv_obj_add_event_cb(main_page, evt_menu_page, LV_EVENT_ALL, main_page);
 
-    cont = ui_menu_cont_create(main_page);
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_group_add_obj(lv_group_get_default(), cont);
-    label = lv_label_create(cont);
-    lv_obj_set_flex_grow(label, 1);
-    lv_label_set_text(label, "FreePSXBoot");
-    label = lv_label_create(cont);
-    lv_label_set_text(label, ">");
-    ui_menu_set_load_page_event(menu, cont, freepsxboot_page);
+        cont = ui_menu_cont_create(main_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "Mode");
+        label = lv_label_create(cont);
+        lv_label_set_text(label, "PS2");
 
-    cont = ui_menu_cont_create(main_page);
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_group_add_obj(lv_group_get_default(), cont);
-    label = lv_label_create(cont);
-    lv_obj_set_flex_grow(label, 1);
-    lv_label_set_text(label, "Display");
-    label = lv_label_create(cont);
-    lv_label_set_text(label, ">");
-    ui_menu_set_load_page_event(menu, cont, display_page);
+        cont = ui_menu_cont_create(main_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "PS1 Settings");
+        label = lv_label_create(cont);
+        lv_label_set_text(label, ">");
+        ui_menu_set_load_page_event(menu, cont, ps1_page);
+
+        cont = ui_menu_cont_create(main_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "PS2 Settings");
+        label = lv_label_create(cont);
+        lv_label_set_text(label, ">");
+        ui_menu_set_load_page_event(menu, cont, ps2_page);
+
+        cont = ui_menu_cont_create(main_page);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_group_add_obj(lv_group_get_default(), cont);
+        label = lv_label_create(cont);
+        lv_obj_set_flex_grow(label, 1);
+        lv_label_set_text(label, "Display");
+        label = lv_label_create(cont);
+        lv_label_set_text(label, ">");
+        ui_menu_set_load_page_event(menu, cont, display_page);
+    }
 
     ui_menu_set_page(menu, main_page);
 }
