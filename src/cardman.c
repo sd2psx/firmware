@@ -6,6 +6,7 @@
 #include "sd.h"
 #include "debug.h"
 #include "psram.h"
+#include "settings.h"
 
 #include "hardware/timer.h"
 
@@ -27,8 +28,12 @@ static size_t cardprog_pos;
 static int cardprog_wr;
 
 void cardman_init(void) {
-    // TODO: should load last used card from eeprom
-    card_idx = card_chan = 1;
+    card_idx = settings_get_ps2_card();
+    if (card_idx < IDX_MIN)
+        card_idx = IDX_MIN;
+    card_chan = settings_get_ps2_channel();
+    if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
+        card_chan = CHAN_MIN;
 }
 
 int cardman_write_sector(int sector, void *buf512) {
@@ -205,6 +210,10 @@ void cardman_open(void) {
 
     printf("Switching to card path = %s\n", path);
 
+    /* this is ok to do on every boot because it wouldn't update if the value is the same as currently stored */
+    settings_set_ps2_card(card_idx);
+    settings_set_ps2_channel(card_chan);
+
     if (!sd_exists(path)) {
         cardprog_wr = 1;
         fd = sd_open(path, O_RDWR | O_CREAT | O_TRUNC);
@@ -280,12 +289,12 @@ void cardman_prev_channel(void) {
 
 void cardman_next_idx(void) {
     card_idx += 1;
-    card_chan = 1;
+    card_chan = CHAN_MIN;
 }
 
 void cardman_prev_idx(void) {
     card_idx -= 1;
-    card_chan = 1;
+    card_chan = CHAN_MIN;
     if (card_idx < IDX_MIN)
         card_idx = IDX_MIN;
 }

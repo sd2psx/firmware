@@ -27,6 +27,10 @@ add_executable(sd2psx
     src/dirty.c
     src/cardman.c
     src/keystore.c
+    src/settings.c
+
+    src/wear_leveling/wear_leveling.c
+    src/wear_leveling/wear_leveling_rp2040_flash.c
 
     src/arduino_wrapper/sd.cpp
     src/arduino_wrapper/SPI.cpp
@@ -66,6 +70,8 @@ add_executable(sd2psx
     ext/ESP8266SdFat/src/MinimumSerial.cpp
     ext/ESP8266SdFat/src/SdCard/SdCardInfo.cpp
     ext/ESP8266SdFat/src/SdCard/SdSpiCard.cpp
+
+    ext/fnv/hash_64a.c
 )
 
 add_library(ssd1306 STATIC ext/pico-ssd1306/ssd1306.c)
@@ -90,6 +96,7 @@ target_include_directories(sd2psx PUBLIC
     ext/pico-ssd1306
     ext/ESP8266SdFat/src
     ext/ESP8266SdFat/extras/attic
+    ext/fnv
 )
 
 pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/psx_spi.pio)
