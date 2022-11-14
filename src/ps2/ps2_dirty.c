@@ -1,6 +1,6 @@
-#include "dirty.h"
-#include "psram.h"
-#include "cardman.h"
+#include "ps2_dirty.h"
+#include "ps2_psram.h"
+#include "ps2_cardman.h"
 
 #include <stdio.h>
 

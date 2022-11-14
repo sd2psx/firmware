@@ -5,13 +5,14 @@
 #include "pico/platform.h"
 
 #include "config.h"
-#include "psx_spi.pio.h"
+#include "ps2_mc_spi.pio.h"
 #include "debug.h"
 #include "keystore.h"
 #include "des.h"
-#include "dirty.h"
-#include "psram.h"
-#include "pio_spi.h"
+
+#include "ps2_dirty.h"
+#include "ps2_psram.h"
+#include "ps2_pio_qspi.h"
 
 #include <string.h>
 
@@ -297,11 +298,11 @@ NEXTCMD:
         if (cmd == 0x81) {
             if (probe_clock()) {
 #define send mc_respond_fast
-#include "memory_card.in.c"
+#include "ps2_memory_card.in.c"
 #undef send
             } else {
 #define send mc_respond_slow
-#include "memory_card.in.c"
+#include "ps2_memory_card.in.c"
 #undef send
             }
         } else {

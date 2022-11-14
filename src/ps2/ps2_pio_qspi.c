@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "pio_spi.h"
+#include "ps2_pio_qspi.h"
 #include "config.h"
-#include "dirty.h"
+#include "ps2_dirty.h"
 #include "hardware/dma.h"
 
 #define QSPI_DAT_MASK ((1 << (PSRAM_DAT+0)) | (1 << (PSRAM_DAT+1)) | (1 << (PSRAM_DAT+2)) | (1 << (PSRAM_DAT+3)))
