@@ -1,11 +1,11 @@
-#include "cardman.h"
+#include "ps2_cardman.h"
 
 #include <stdio.h>
 #include <string.h>
 
 #include "sd.h"
 #include "debug.h"
-#include "psram.h"
+#include "ps2_psram.h"
 #include "settings.h"
 
 #include "hardware/timer.h"

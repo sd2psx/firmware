@@ -15,19 +15,20 @@ add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
 
 add_executable(sd2psx
     src/main.c
-    src/memory_card.c
     src/debug.c
     src/gui.c
     src/input.c
-    src/pio_spi.c
-    src/psram.c
     src/ui_menu.c
     src/ui_theme_mono.c
     src/des.c
-    src/dirty.c
-    src/cardman.c
     src/keystore.c
     src/settings.c
+
+    src/ps2/ps2_memory_card.c
+    src/ps2/ps2_dirty.c
+    src/ps2/ps2_cardman.c
+    src/ps2/ps2_pio_qspi.c
+    src/ps2/ps2_psram.c
 
     src/wear_leveling/wear_leveling.c
     src/wear_leveling/wear_leveling_rp2040_flash.c
@@ -99,8 +100,8 @@ target_include_directories(sd2psx PUBLIC
     ext/fnv
 )
 
-pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/psx_spi.pio)
-pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/spi.pio)
+pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/ps2/ps2_mc_spi.pio)
+pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/ps2/ps2_qspi.pio)
 
 target_link_libraries(sd2psx
     ssd1306

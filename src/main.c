@@ -7,17 +7,18 @@
 #include "hardware/vreg.h"
 #include "hardware/structs/bus_ctrl.h"
 
-#include "memory_card.h"
 #include "gui.h"
 #include "input.h"
 #include "config.h"
 #include "debug.h"
-#include "psram.h"
 #include "sd.h"
-#include "dirty.h"
-#include "cardman.h"
 #include "keystore.h"
 #include "settings.h"
+
+#include "ps2/ps2_memory_card.h"
+#include "ps2/ps2_dirty.h"
+#include "ps2/ps2_cardman.h"
+#include "ps2/ps2_psram.h"
 
 /* reboot to bootloader if either button is held on startup
    to make the device easier to flash when assembled inside case */

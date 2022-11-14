@@ -7,7 +7,7 @@
 #define _PIO_SPI_H
 
 #include "hardware/pio.h"
-#include "spi.pio.h"
+#include "ps2_qspi.pio.h"
 
 #define PIO_SPI_DMA_RX_CHAN 0
 #define PIO_SPI_DMA_TX_CHAN 1

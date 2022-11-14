@@ -1,7 +1,7 @@
 #include "config.h"
-#include "psram.h"
+#include "ps2_psram.h"
 
-#include "pio_spi.h"
+#include "ps2_pio_qspi.h"
 #include "hardware/timer.h"
 
 #include <stdio.h>

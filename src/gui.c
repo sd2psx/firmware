@@ -8,10 +8,11 @@
 #include "lvgl.h"
 #include "input.h"
 #include "ui_menu.h"
-#include "memory_card.h"
-#include "cardman.h"
-#include "dirty.h"
 #include "keystore.h"
+
+#include "ps2/ps2_memory_card.h"
+#include "ps2/ps2_cardman.h"
+#include "ps2/ps2_dirty.h"
 
 #include "ui_theme_mono.h"
 
