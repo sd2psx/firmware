@@ -54,6 +54,37 @@ static lv_obj_t* ui_menu_subpage_create(lv_obj_t *menu, const char* title) {
     return page;
 }
 
+static lv_obj_t* ui_label_create(lv_obj_t *parent, const char *text) {
+    lv_obj_t *label = lv_label_create(parent);
+    lv_label_set_text(label, text);
+    return label;
+}
+
+static lv_obj_t* ui_label_create_grow(lv_obj_t *parent, const char *text) {
+    lv_obj_t *label = ui_label_create(parent, text);
+    lv_obj_set_flex_grow(label, 1);
+    return label;
+}
+
+static void scrollable_label(lv_event_t *event) {
+    if (event->code == LV_EVENT_FOCUSED)
+        lv_label_set_long_mode(event->user_data, LV_LABEL_LONG_SCROLL);
+    else
+        lv_label_set_long_mode(event->user_data, LV_LABEL_LONG_CLIP);
+}
+
+static void ui_make_scrollable(lv_obj_t *cont, lv_obj_t *label) {
+    lv_label_set_long_mode(label, LV_LABEL_LONG_CLIP);
+    lv_obj_add_event_cb(cont, scrollable_label, LV_EVENT_FOCUSED, label);
+    lv_obj_add_event_cb(cont, scrollable_label, LV_EVENT_DEFOCUSED, label);
+}
+
+static lv_obj_t* ui_label_create_grow_scroll(lv_obj_t *parent, const char *text) {
+    lv_obj_t *label = ui_label_create_grow(parent, text);
+    ui_make_scrollable(parent, label);
+    return label;
+}
+
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
     if (have_oled) {
         ssd1306_clear(&oled_disp);
@@ -243,19 +274,6 @@ static void evt_do_civ_deploy(lv_event_t *event) {
     }
 }
 
-static void scrollable_label(lv_event_t *event) {
-    if (event->code == LV_EVENT_FOCUSED)
-        lv_label_set_long_mode(event->user_data, LV_LABEL_LONG_SCROLL);
-    else
-        lv_label_set_long_mode(event->user_data, LV_LABEL_LONG_CLIP);
-}
-
-static void ui_make_scrollable(lv_obj_t *cont, lv_obj_t *label) {
-    lv_label_set_long_mode(label, LV_LABEL_LONG_CLIP);
-    lv_obj_add_event_cb(cont, scrollable_label, LV_EVENT_FOCUSED, label);
-    lv_obj_add_event_cb(cont, scrollable_label, LV_EVENT_DEFOCUSED, label);
-}
-
 static void create_main_screen(void) {
     /* Main screen listing current memcard, status, etc */
     scr_main = ui_scr_create();
@@ -391,74 +409,52 @@ static void create_menu_screen(void) {
     lv_obj_set_size(menu, lv_disp_get_hor_res(NULL), lv_disp_get_ver_res(NULL) - 2);
 
     lv_obj_t *cont;
-    lv_obj_t *label;
 
     /* deploy submenu */
     lv_obj_t *mode_page = ui_menu_subpage_create(menu, "Mode");
     {
         cont = ui_menu_cont_create_nav(mode_page);
-        label = lv_label_create(cont);
-        lv_label_set_text(label, "PS1");
+        ui_label_create(cont, "PS1");
 
         cont = ui_menu_cont_create_nav(mode_page);
-        label = lv_label_create(cont);
-        lv_label_set_text(label, "PS2");
+        ui_label_create(cont, "PS2");
     }
 
     /* freepsxboot integration for ps1 */
     lv_obj_t *freepsxboot_page = ui_menu_subpage_create(menu, "FreePSXBoot");
     {
         cont = ui_menu_cont_create_nav(freepsxboot_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Autoboot");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, "Yes");
+        ui_label_create_grow(cont, "Autoboot");
+        ui_label_create(cont, "Yes");
 
         cont = ui_menu_cont_create_nav(freepsxboot_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Model");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, "1001v3");
+        ui_label_create_grow(cont, "Model");
+        ui_label_create(cont, "1001v3");
 
         cont = ui_menu_cont_create_nav(freepsxboot_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Slot");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, "Slot 1");
+        ui_label_create_grow(cont, "Slot");
+        ui_label_create(cont, "Slot 1");
     }
 
     /* display config */
     lv_obj_t *display_page = ui_menu_subpage_create(menu, "Display");
     {
         cont = ui_menu_cont_create_nav(display_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Auto off");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, "30s");
+        ui_label_create_grow(cont, "Auto off");
+        ui_label_create(cont, "30s");
     }
 
     /* ps1 */
     lv_obj_t *ps1_page = ui_menu_subpage_create(menu, "PS1 Settings");
     {
         cont = ui_menu_cont_create_nav(ps1_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "FreePSXBoot");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, ">");
+        ui_label_create_grow(cont, "FreePSXBoot");
+        ui_label_create(cont, ">");
         ui_menu_set_load_page_event(menu, cont, freepsxboot_page);
 
         cont = ui_menu_cont_create_nav(ps1_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Imitate a PocketStation");
-        ui_make_scrollable(cont, label);
-        label = lv_label_create(cont);
-        lv_label_set_text(label, " No");
+        ui_label_create_grow_scroll(cont, "Imitate a PocketStation");
+        ui_label_create(cont, "No");
     }
 
     /* ps2 */
@@ -474,42 +470,27 @@ static void create_menu_screen(void) {
         lv_obj_t *civ_page = ui_menu_subpage_create(menu, "Deploy CIV.bin");
         {
             cont = ui_menu_cont_create(civ_page);
-            label = lv_label_create(cont);
-            lv_label_set_text(label, "");
+            ui_label_create(cont, "");
             cont = ui_menu_cont_create(civ_page);
-            label = lv_label_create(cont);
-            lv_label_set_text(label, "");
-            lbl_civ_err = label;
+            lbl_civ_err = ui_label_create(cont, "");
 
             cont = ui_menu_cont_create_nav(civ_page);
-            label = lv_label_create(cont);
-            lv_label_set_text(label, "Back");
+            ui_label_create(cont, "Back");
             lv_obj_add_event_cb(cont, evt_civ_back, LV_EVENT_CLICKED, NULL);
         }
 
         cont = ui_menu_cont_create_nav(ps2_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Autoboot exploit");
-        ui_make_scrollable(cont, label);
-        label = lv_label_create(cont);
-        lv_label_set_text(label, " No");
+        ui_label_create_grow_scroll(cont, "Autoboot exploit");
+        ui_label_create(cont, " No");
 
         cont = ui_menu_cont_create_nav(ps2_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Install EXPLOIT.bin");
-        ui_make_scrollable(cont, label);
-        label = lv_label_create(cont);
-        lv_label_set_text(label, " >");
+        ui_label_create_grow_scroll(cont, "Install EXPLOIT.bin");
+        ui_label_create(cont, " >");
         ui_menu_set_load_page_event(menu, cont, exploit_install_page);
 
         cont = ui_menu_cont_create_nav(ps2_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Deploy CIV.bin");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, ">");
+        ui_label_create_grow(cont, "Deploy CIV.bin");
+        ui_label_create(cont, ">");
         ui_menu_set_load_page_event(menu, cont, civ_page);
         lv_obj_add_event_cb(cont, evt_do_civ_deploy, LV_EVENT_CLICKED, NULL);
     }
@@ -518,35 +499,23 @@ static void create_menu_screen(void) {
     main_page = ui_menu_subpage_create(menu, NULL);
     {
         cont = ui_menu_cont_create_nav(main_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Mode");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, "PS2");
+        ui_label_create_grow(cont, "Mode");
+        ui_label_create(cont, "PS2");
         ui_menu_set_load_page_event(menu, cont, mode_page);
 
         cont = ui_menu_cont_create_nav(main_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "PS1 Settings");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, ">");
+        ui_label_create_grow(cont, "PS1 Settings");
+        ui_label_create(cont, ">");
         ui_menu_set_load_page_event(menu, cont, ps1_page);
 
         cont = ui_menu_cont_create_nav(main_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "PS2 Settings");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, ">");
+        ui_label_create_grow(cont, "PS2 Settings");
+        ui_label_create(cont, ">");
         ui_menu_set_load_page_event(menu, cont, ps2_page);
 
         cont = ui_menu_cont_create_nav(main_page);
-        label = lv_label_create(cont);
-        lv_obj_set_flex_grow(label, 1);
-        lv_label_set_text(label, "Display");
-        label = lv_label_create(cont);
-        lv_label_set_text(label, ">");
+        ui_label_create_grow(cont, "Display");
+        ui_label_create(cont, ">");
         ui_menu_set_load_page_event(menu, cont, display_page);
     }
 
