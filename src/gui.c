@@ -61,6 +61,13 @@ static lv_obj_t* ui_label_create(lv_obj_t *parent, const char *text) {
     return label;
 }
 
+static lv_obj_t *ui_label_create_at(lv_obj_t *parent, int x, int y, const char *text) {
+    lv_obj_t *label = ui_label_create(parent, text);
+    lv_obj_set_align(label, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_pos(label, x, y);
+    return label;
+}
+
 static lv_obj_t* ui_label_create_grow(lv_obj_t *parent, const char *text) {
     lv_obj_t *label = ui_label_create(parent, text);
     lv_obj_set_flex_grow(label, 1);
@@ -310,27 +317,15 @@ static void create_main_screen(void) {
 
     ui_header_create(scr_main, "PS2 Memory Card");
 
-    lbl = lv_label_create(scr_main);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(lbl, 0, 24);
-    lv_label_set_text(lbl, "Card");
+    ui_label_create_at(scr_main, 0, 24, "Card");
 
-    lbl = lv_label_create(scr_main);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_RIGHT);
-    lv_obj_set_pos(lbl, 0, 24);
-    lv_label_set_text(lbl, "");
-    scr_main_idx_lbl = lbl;
+    scr_main_idx_lbl = ui_label_create_at(scr_main, 0, 24, "");
+    lv_obj_set_align(scr_main_idx_lbl, LV_ALIGN_TOP_RIGHT);
 
-    lbl = lv_label_create(scr_main);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(lbl, 0, 32);
-    lv_label_set_text(lbl, "Channel");
+    ui_label_create_at(scr_main, 0, 32, "Channel");
 
-    lbl = lv_label_create(scr_main);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_RIGHT);
-    lv_obj_set_pos(lbl, 0, 32);
-    lv_label_set_text(lbl, "");
-    scr_main_channel_lbl = lbl;
+    scr_main_channel_lbl = ui_label_create_at(scr_main, 0, 32, "");
+    lv_obj_set_align(scr_main_channel_lbl, LV_ALIGN_TOP_RIGHT);
 
     // lbl = lv_label_create(scr_main);
     // lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
@@ -416,24 +411,13 @@ static void create_cardswitch_screen(void) {
 }
 
 static void create_switch_nag_screen(void) {
-    lv_obj_t *lbl;
-
     scr_switch_nag = ui_scr_create();
 
     ui_header_create(scr_switch_nag, "Mode switch");
 
-    lbl = lv_label_create(scr_switch_nag);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(lbl, 0, 24);
-    lv_label_set_text(lbl, "Now unplug the");
-    lbl = lv_label_create(scr_switch_nag);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(lbl, 0, 32);
-    lv_label_set_text(lbl, "card and then");
-    lbl = lv_label_create(scr_switch_nag);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(lbl, 0, 40);
-    lv_label_set_text(lbl, "plug it back in");
+    ui_label_create_at(scr_switch_nag, 0, 24, "Now unplug the");
+    ui_label_create_at(scr_switch_nag, 0, 32, "card and then");
+    ui_label_create_at(scr_switch_nag, 0, 40, "plug it back in");
 }
 
 static void create_menu_screen(void) {
