@@ -20,13 +20,14 @@ static ssd1306_t oled_disp = { .external_vcc = 0 };
 /* Displays the line at the bottom for long pressing buttons */
 static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text, *g_activity_frame;
 
-static lv_obj_t *scr_card_switch, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
+static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
 static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *lbl_civ_err;
 
 static int have_oled;
 static int switching_card;
 static uint64_t switching_card_timeout;
+static int terminated;
 
 #define COLOR_FG      lv_color_white()
 #define COLOR_BG      lv_color_black()
@@ -258,7 +259,7 @@ void evt_menu_page(lv_event_t *event) {
     }
 }
 
-static void evt_civ_back(lv_event_t *event) {
+static void evt_go_back(lv_event_t *event) {
     ui_menu_go_back(menu);
     lv_event_stop_bubbling(event);
 }
@@ -272,6 +273,22 @@ static void evt_do_civ_deploy(lv_event_t *event) {
     } else {
         lv_label_set_text(lbl_civ_err, keystore_error(ret));
     }
+}
+
+static void evt_switch_to_ps1(lv_event_t *event) {
+    (void)event;
+
+    // TODO: write eeprom
+    UI_GOTO_SCREEN(scr_switch_nag);
+    terminated = 1;
+}
+
+static void evt_switch_to_ps2(lv_event_t *event) {
+    (void)event;
+
+    // TODO: write eeprom
+    UI_GOTO_SCREEN(scr_switch_nag);
+    terminated = 1;
 }
 
 static void create_main_screen(void) {
@@ -399,6 +416,30 @@ static void create_cardswitch_screen(void) {
     lv_label_set_text(g_progress_text, "Read XXX kB/s");
 }
 
+static void create_switch_nag_screen(void) {
+    scr_switch_nag = ui_scr_create();
+
+    lv_obj_t *lbl = lv_label_create(scr_switch_nag);
+    lv_obj_set_align(lbl, LV_ALIGN_TOP_MID);
+    lv_obj_add_style(lbl, &style_inv, 0);
+    lv_obj_set_width(lbl, 128);
+    lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_text(lbl, "Mode switch");
+
+    lbl = lv_label_create(scr_switch_nag);
+    lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_pos(lbl, 0, 24);
+    lv_label_set_text(lbl, "Now unplug the");
+    lbl = lv_label_create(scr_switch_nag);
+    lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_pos(lbl, 0, 32);
+    lv_label_set_text(lbl, "card and then");
+    lbl = lv_label_create(scr_switch_nag);
+    lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_pos(lbl, 0, 40);
+    lv_label_set_text(lbl, "plug it back in");
+}
+
 static void create_menu_screen(void) {
     /* Menu screen accessible by pressing the menu button at main */
     scr_menu = ui_scr_create();
@@ -413,11 +454,35 @@ static void create_menu_screen(void) {
     /* deploy submenu */
     lv_obj_t *mode_page = ui_menu_subpage_create(menu, "Mode");
     {
+        lv_obj_t *ps2_switch_warn = ui_menu_subpage_create(menu, NULL);
+        {
+            cont = ui_menu_cont_create(ps2_switch_warn);
+            ui_label_create(cont, "Do not insert");
+            cont = ui_menu_cont_create(ps2_switch_warn);
+            ui_label_create(cont, "into PS1 when");
+            cont = ui_menu_cont_create(ps2_switch_warn);
+            ui_label_create(cont, "set to PS2 mode!");
+            cont = ui_menu_cont_create(ps2_switch_warn);
+            ui_label_create(cont, "It may damage");
+            cont = ui_menu_cont_create(ps2_switch_warn);
+            ui_label_create(cont, "card and console");
+
+            cont = ui_menu_cont_create_nav(ps2_switch_warn);
+            ui_label_create(cont, "Confirm");
+            lv_obj_add_event_cb(cont, evt_switch_to_ps2, LV_EVENT_CLICKED, NULL);
+
+            cont = ui_menu_cont_create_nav(ps2_switch_warn);
+            ui_label_create(cont, "Back");
+            lv_obj_add_event_cb(cont, evt_go_back, LV_EVENT_CLICKED, NULL);
+        }
+
         cont = ui_menu_cont_create_nav(mode_page);
         ui_label_create(cont, "PS1");
+        lv_obj_add_event_cb(cont, evt_switch_to_ps1, LV_EVENT_CLICKED, NULL);
 
         cont = ui_menu_cont_create_nav(mode_page);
         ui_label_create(cont, "PS2");
+        ui_menu_set_load_page_event(menu, cont, ps2_switch_warn);
     }
 
     /* freepsxboot integration for ps1 */
@@ -476,7 +541,7 @@ static void create_menu_screen(void) {
 
             cont = ui_menu_cont_create_nav(civ_page);
             ui_label_create(cont, "Back");
-            lv_obj_add_event_cb(cont, evt_civ_back, LV_EVENT_CLICKED, NULL);
+            lv_obj_add_event_cb(cont, evt_go_back, LV_EVENT_CLICKED, NULL);
         }
 
         cont = ui_menu_cont_create_nav(ps2_page);
@@ -536,6 +601,7 @@ static void create_ui(void) {
     create_main_screen();
     create_menu_screen();
     create_cardswitch_screen();
+    create_switch_nag_screen();
     create_freepsxboot_screen();
 
     /* start at the main screen - TODO - or freepsxboot */
@@ -631,4 +697,11 @@ void gui_task(void) {
     }
 
     gui_tick();
+
+    /* fatal error, or mode switch between ps1/ps2 - kill all input until replugged */
+    if (terminated) {
+        while (1) {
+            gui_tick();
+        }
+    }
 }
