@@ -377,15 +377,11 @@ static void create_menu_screen(void) {
         lv_group_add_obj(lv_group_get_default(), mode_page);
         lv_obj_add_event_cb(mode_page, evt_menu_page, LV_EVENT_ALL, mode_page);
 
-        cont = ui_menu_cont_create(mode_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(mode_page);
         label = lv_label_create(cont);
         lv_label_set_text(label, "PS1");
 
-        cont = ui_menu_cont_create(mode_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(mode_page);
         label = lv_label_create(cont);
         lv_label_set_text(label, "PS2");
     }
@@ -397,27 +393,21 @@ static void create_menu_screen(void) {
         lv_group_add_obj(lv_group_get_default(), freepsxboot_page);
         lv_obj_add_event_cb(freepsxboot_page, evt_menu_page, LV_EVENT_ALL, freepsxboot_page);
 
-        cont = ui_menu_cont_create(freepsxboot_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(freepsxboot_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Autoboot");
         label = lv_label_create(cont);
         lv_label_set_text(label, "Yes");
 
-        cont = ui_menu_cont_create(freepsxboot_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(freepsxboot_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Model");
         label = lv_label_create(cont);
         lv_label_set_text(label, "1001v3");
 
-        cont = ui_menu_cont_create(freepsxboot_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(freepsxboot_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Slot");
@@ -432,9 +422,7 @@ static void create_menu_screen(void) {
         lv_group_add_obj(lv_group_get_default(), display_page);
         lv_obj_add_event_cb(display_page, evt_menu_page, LV_EVENT_ALL, display_page);
 
-        cont = ui_menu_cont_create(display_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(display_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Auto off");
@@ -449,9 +437,7 @@ static void create_menu_screen(void) {
         lv_group_add_obj(lv_group_get_default(), ps1_page);
         lv_obj_add_event_cb(ps1_page, evt_menu_page, LV_EVENT_ALL, ps1_page);
 
-        cont = ui_menu_cont_create(ps1_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(ps1_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "FreePSXBoot");
@@ -459,9 +445,7 @@ static void create_menu_screen(void) {
         lv_label_set_text(label, ">");
         ui_menu_set_load_page_event(menu, cont, freepsxboot_page);
 
-        cont = ui_menu_cont_create(ps1_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(ps1_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Imitate a PocketStation");
@@ -500,17 +484,13 @@ static void create_menu_screen(void) {
             lv_label_set_text(label, "");
             lbl_civ_err = label;
 
-            cont = ui_menu_cont_create(civ_page);
-            lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-            lv_group_add_obj(lv_group_get_default(), cont);
+            cont = ui_menu_cont_create_nav(civ_page);
             label = lv_label_create(cont);
             lv_label_set_text(label, "Back");
             lv_obj_add_event_cb(cont, evt_civ_back, LV_EVENT_CLICKED, NULL);
         }
 
-        cont = ui_menu_cont_create(ps2_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(ps2_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Autoboot exploit");
@@ -518,9 +498,7 @@ static void create_menu_screen(void) {
         label = lv_label_create(cont);
         lv_label_set_text(label, " No");
 
-        cont = ui_menu_cont_create(ps2_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(ps2_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Install EXPLOIT.bin");
@@ -529,9 +507,7 @@ static void create_menu_screen(void) {
         lv_label_set_text(label, " >");
         ui_menu_set_load_page_event(menu, cont, exploit_install_page);
 
-        cont = ui_menu_cont_create(ps2_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(ps2_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Deploy CIV.bin");
@@ -548,9 +524,7 @@ static void create_menu_screen(void) {
         lv_group_add_obj(lv_group_get_default(), main_page);
         lv_obj_add_event_cb(main_page, evt_menu_page, LV_EVENT_ALL, main_page);
 
-        cont = ui_menu_cont_create(main_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(main_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Mode");
@@ -558,9 +532,7 @@ static void create_menu_screen(void) {
         lv_label_set_text(label, "PS2");
         ui_menu_set_load_page_event(menu, cont, mode_page);
 
-        cont = ui_menu_cont_create(main_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(main_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "PS1 Settings");
@@ -568,9 +540,7 @@ static void create_menu_screen(void) {
         lv_label_set_text(label, ">");
         ui_menu_set_load_page_event(menu, cont, ps1_page);
 
-        cont = ui_menu_cont_create(main_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(main_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "PS2 Settings");
@@ -578,9 +548,7 @@ static void create_menu_screen(void) {
         lv_label_set_text(label, ">");
         ui_menu_set_load_page_event(menu, cont, ps2_page);
 
-        cont = ui_menu_cont_create(main_page);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), cont);
+        cont = ui_menu_cont_create_nav(main_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
         lv_label_set_text(label, "Display");
