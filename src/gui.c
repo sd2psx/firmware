@@ -86,6 +86,16 @@ static lv_obj_t* ui_label_create_grow_scroll(lv_obj_t *parent, const char *text)
     return label;
 }
 
+static lv_obj_t* ui_header_create(lv_obj_t *parent, const char *text) {
+    lv_obj_t *lbl = lv_label_create(parent);
+    lv_obj_set_align(lbl, LV_ALIGN_TOP_MID);
+    lv_obj_add_style(lbl, &style_inv, 0);
+    lv_obj_set_width(lbl, DISPLAY_WIDTH);
+    lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_text(lbl, text);
+    return lbl;
+}
+
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
     if (have_oled) {
         ssd1306_clear(&oled_disp);
@@ -292,16 +302,13 @@ static void evt_switch_to_ps2(lv_event_t *event) {
 }
 
 static void create_main_screen(void) {
+    lv_obj_t *lbl;
+
     /* Main screen listing current memcard, status, etc */
     scr_main = ui_scr_create();
     lv_obj_add_event_cb(scr_main, evt_scr_main, LV_EVENT_ALL, NULL);
 
-    lv_obj_t *lbl = lv_label_create(scr_main);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_MID);
-    lv_obj_add_style(lbl, &style_inv, 0);
-    lv_obj_set_width(lbl, 128);
-    lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_text(lbl, "PS2 Memory Card");
+    ui_header_create(scr_main, "PS2 Memory Card");
 
     lbl = lv_label_create(scr_main);
     lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
@@ -354,15 +361,12 @@ static void create_main_screen(void) {
 }
 
 static void create_freepsxboot_screen(void) {
+    lv_obj_t *lbl;
+
     scr_freepsxboot = ui_scr_create();
     lv_obj_add_event_cb(scr_freepsxboot, evt_scr_freepsxboot, LV_EVENT_ALL, NULL);
 
-    lv_obj_t *lbl = lv_label_create(scr_freepsxboot);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_MID);
-    lv_obj_add_style(lbl, &style_inv, 0);
-    lv_obj_set_width(lbl, 128);
-    lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_text(lbl, "FreePSXBoot");
+    ui_header_create(scr_freepsxboot, "FreePSXBoot");
 
     lbl = lv_label_create(scr_freepsxboot);
     lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
@@ -394,12 +398,7 @@ static void create_freepsxboot_screen(void) {
 static void create_cardswitch_screen(void) {
     scr_card_switch = ui_scr_create();
 
-    lv_obj_t *lbl = lv_label_create(scr_card_switch);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_MID);
-    lv_obj_add_style(lbl, &style_inv, 0);
-    lv_obj_set_width(lbl, 128);
-    lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_text(lbl, "Loading card");
+    ui_header_create(scr_card_switch, "Loading card");
 
     static lv_style_t style_progress;
     lv_style_init(&style_progress);
@@ -417,14 +416,11 @@ static void create_cardswitch_screen(void) {
 }
 
 static void create_switch_nag_screen(void) {
+    lv_obj_t *lbl;
+
     scr_switch_nag = ui_scr_create();
 
-    lv_obj_t *lbl = lv_label_create(scr_switch_nag);
-    lv_obj_set_align(lbl, LV_ALIGN_TOP_MID);
-    lv_obj_add_style(lbl, &style_inv, 0);
-    lv_obj_set_width(lbl, 128);
-    lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_text(lbl, "Mode switch");
+    ui_header_create(scr_switch_nag, "Mode switch");
 
     lbl = lv_label_create(scr_switch_nag);
     lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
