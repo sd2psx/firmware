@@ -113,7 +113,7 @@ lv_obj_t * ui_menu_create(lv_obj_t * parent)
     return obj;
 }
 
-lv_obj_t * ui_menu_page_create(lv_obj_t * parent, char * title)
+lv_obj_t * ui_menu_page_create(lv_obj_t * parent, const char * title)
 {
     LV_LOG_INFO("begin");
     lv_obj_t * obj = lv_obj_class_create_obj(&ui_menu_page_class, parent);

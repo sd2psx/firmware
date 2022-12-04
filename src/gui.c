@@ -174,7 +174,7 @@ static void evt_scr_menu(lv_event_t *event) {
     }
 }
 
-static void evt_menu_page(lv_event_t *event) {
+void evt_menu_page(lv_event_t *event) {
     if (event->code == LV_EVENT_KEY) {
         lv_obj_t *page = event->user_data;
         uint32_t key = lv_indev_get_key(lv_indev_get_act());
@@ -371,12 +371,8 @@ static void create_menu_screen(void) {
     lv_obj_t *label;
 
     /* deploy submenu */
-    lv_obj_t *mode_page = ui_menu_page_create(menu, "Mode");
+    lv_obj_t *mode_page = ui_menu_subpage_create(menu, "Mode");
     {
-        lv_obj_add_flag(mode_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), mode_page);
-        lv_obj_add_event_cb(mode_page, evt_menu_page, LV_EVENT_ALL, mode_page);
-
         cont = ui_menu_cont_create_nav(mode_page);
         label = lv_label_create(cont);
         lv_label_set_text(label, "PS1");
@@ -387,12 +383,8 @@ static void create_menu_screen(void) {
     }
 
     /* freepsxboot integration for ps1 */
-    lv_obj_t *freepsxboot_page = ui_menu_page_create(menu, "FreePSXBoot");
+    lv_obj_t *freepsxboot_page = ui_menu_subpage_create(menu, "FreePSXBoot");
     {
-        lv_obj_add_flag(freepsxboot_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), freepsxboot_page);
-        lv_obj_add_event_cb(freepsxboot_page, evt_menu_page, LV_EVENT_ALL, freepsxboot_page);
-
         cont = ui_menu_cont_create_nav(freepsxboot_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
@@ -416,12 +408,8 @@ static void create_menu_screen(void) {
     }
 
     /* display config */
-    lv_obj_t *display_page = ui_menu_page_create(menu, "Display");
+    lv_obj_t *display_page = ui_menu_subpage_create(menu, "Display");
     {
-        lv_obj_add_flag(display_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), display_page);
-        lv_obj_add_event_cb(display_page, evt_menu_page, LV_EVENT_ALL, display_page);
-
         cont = ui_menu_cont_create_nav(display_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
@@ -431,12 +419,8 @@ static void create_menu_screen(void) {
     }
 
     /* ps1 */
-    lv_obj_t *ps1_page = ui_menu_page_create(menu, "PS1 Settings");
+    lv_obj_t *ps1_page = ui_menu_subpage_create(menu, "PS1 Settings");
     {
-        lv_obj_add_flag(ps1_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), ps1_page);
-        lv_obj_add_event_cb(ps1_page, evt_menu_page, LV_EVENT_ALL, ps1_page);
-
         cont = ui_menu_cont_create_nav(ps1_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);
@@ -455,27 +439,17 @@ static void create_menu_screen(void) {
     }
 
     /* ps2 */
-    lv_obj_t *ps2_page = ui_menu_page_create(menu, "PS2 Settings");
+    lv_obj_t *ps2_page = ui_menu_subpage_create(menu, "PS2 Settings");
     {
-        lv_obj_add_flag(ps2_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), ps2_page);
-        lv_obj_add_event_cb(ps2_page, evt_menu_page, LV_EVENT_ALL, ps2_page);
-
         /* exploit install */
-        lv_obj_t *exploit_install_page = ui_menu_page_create(menu, "Install EXPLOIT.bin");
+        lv_obj_t *exploit_install_page = ui_menu_subpage_create(menu, "Install EXPLOIT.bin");
         {
-            lv_obj_add_flag(exploit_install_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-            lv_group_add_obj(lv_group_get_default(), exploit_install_page);
-            lv_obj_add_event_cb(exploit_install_page, evt_menu_page, LV_EVENT_ALL, exploit_install_page);
+            // TODO: handle exploit install
         }
 
         /* deploy submenu */
-        lv_obj_t *civ_page = ui_menu_page_create(menu, "Deploy CIV.bin");
+        lv_obj_t *civ_page = ui_menu_subpage_create(menu, "Deploy CIV.bin");
         {
-            lv_obj_add_flag(civ_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-            lv_group_add_obj(lv_group_get_default(), civ_page);
-            lv_obj_add_event_cb(civ_page, evt_menu_page, LV_EVENT_ALL, civ_page);
-
             cont = ui_menu_cont_create(civ_page);
             label = lv_label_create(cont);
             lv_label_set_text(label, "");
@@ -518,12 +492,8 @@ static void create_menu_screen(void) {
     }
 
     /* Main menu */
-    main_page = ui_menu_page_create(menu, NULL);
+    main_page = ui_menu_subpage_create(menu, NULL);
     {
-        lv_obj_add_flag(main_page, LV_OBJ_FLAG_EVENT_BUBBLE);
-        lv_group_add_obj(lv_group_get_default(), main_page);
-        lv_obj_add_event_cb(main_page, evt_menu_page, LV_EVENT_ALL, main_page);
-
         cont = ui_menu_cont_create_nav(main_page);
         label = lv_label_create(cont);
         lv_obj_set_flex_grow(label, 1);

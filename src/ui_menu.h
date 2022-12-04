@@ -103,7 +103,7 @@ lv_obj_t * ui_menu_create(lv_obj_t * parent);
  * @param title pointer to text for title in header (NULL to not display title)
  * @return pointer to the created menu page
  */
-lv_obj_t * ui_menu_page_create(lv_obj_t * parent, char * title);
+lv_obj_t * ui_menu_page_create(lv_obj_t * parent, const char * title);
 
 /**
  * Create a menu cont object
