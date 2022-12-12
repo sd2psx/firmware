@@ -2,6 +2,10 @@
 #include "ps2_psram.h"
 #include "ps2_cardman.h"
 
+#include "bigmem.h"
+#define dirty_heap bigmem.ps2.dirty_heap
+#define dirty_map bigmem.ps2.dirty_map
+
 #include <stdio.h>
 
 spin_lock_t *ps2_dirty_spin_lock;
@@ -9,8 +13,6 @@ volatile uint32_t ps2_dirty_lockout;
 int ps2_dirty_activity;
 
 static int num_dirty;
-static uint16_t dirty_heap[8 * 1024 * 1024 / 512];
-static uint8_t dirty_map[8 * 1024 * 1024 / 512]; // TODO: make an actual bitmap to save 8x mem?
 
 #define SWAP(a, b) do { \
     uint16_t tmp = a; \

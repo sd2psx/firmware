@@ -1,0 +1,13 @@
+#include <inttypes.h>
+
+typedef union {
+    struct {
+        uint8_t card_image[128 * 1024];
+    } ps1;
+    struct {
+        uint16_t dirty_heap[8 * 1024 * 1024 / 512];
+        uint8_t dirty_map[8 * 1024 * 1024 / 512]; // TODO: make an actual bitmap to save 8x mem?
+    } ps2;
+} bigmem_t;
+
+extern bigmem_t bigmem;

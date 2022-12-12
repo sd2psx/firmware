@@ -15,6 +15,8 @@
 #include "keystore.h"
 #include "settings.h"
 
+#include "ps1/ps1_memory_card.h"
+
 #include "ps2/ps2_memory_card.h"
 #include "ps2/ps2_dirty.h"
 #include "ps2/ps2_cardman.h"
@@ -72,6 +74,8 @@ int main() {
 
         sd_init();
         gui_init();
+
+        multicore_launch_core1(ps1_memory_card_main);
 
         while (1) {
             debug_task();

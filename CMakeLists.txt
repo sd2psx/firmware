@@ -23,6 +23,9 @@ add_executable(sd2psx
     src/des.c
     src/keystore.c
     src/settings.c
+    src/bigmem.c
+
+    src/ps1/ps1_memory_card.c
 
     src/ps2/ps2_memory_card.c
     src/ps2/ps2_dirty.c
@@ -100,6 +103,7 @@ target_include_directories(sd2psx PUBLIC
     ext/fnv
 )
 
+pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/ps1/ps1_mc_spi.pio)
 pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/ps2/ps2_mc_spi.pio)
 pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/ps2/ps2_qspi.pio)
 
