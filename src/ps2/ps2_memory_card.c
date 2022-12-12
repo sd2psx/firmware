@@ -311,7 +311,7 @@ EXIT_REQUEST:
     mc_exit_response = 1;
 }
 
-static void __time_critical_func(mc_main)(void) {
+static void __no_inline_not_in_flash_func(mc_main)(void) {
     while (1) {
         while (!mc_enter_request)
         {}
