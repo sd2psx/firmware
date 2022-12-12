@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "settings.h"
 #include "bigmem.h"
+#include "ps1_empty_card.h"
 
 #include "hardware/timer.h"
 
@@ -63,7 +64,9 @@ static void ensuredirs(void) {
 
 static void genblock(size_t pos, void *buf) {
     memset(buf, 0xFF, BLOCK_SIZE);
-    // TODO: genblock for ps1 clean cards
+
+    if (pos < 0x2000)
+        memcpy(buf, &ps1_empty_card[pos], BLOCK_SIZE);
 }
 
 void ps1_cardman_open(void) {
