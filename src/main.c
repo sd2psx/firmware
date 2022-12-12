@@ -86,7 +86,7 @@ int main() {
         keystore_init();
         psram_init();
         sd_init();
-        cardman_init();
+        ps2_cardman_init();
         dirty_init();
         gui_init();
 

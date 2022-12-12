@@ -181,7 +181,7 @@ static void reload_card_cb(int progress) {
     line_points[1].x = DISPLAY_WIDTH * progress / 100;
     lv_line_set_points(g_progress_bar, line_points, 2);
 
-    lv_label_set_text(g_progress_text, cardman_get_progress_text());
+    lv_label_set_text(g_progress_text, ps2_cardman_get_progress_text());
 
     gui_tick();
 }
@@ -204,24 +204,24 @@ static void evt_scr_main(lv_event_t *event) {
         // TODO: ps1 support here
         if (key == INPUT_KEY_PREV || key == INPUT_KEY_NEXT || key == INPUT_KEY_BACK || key == INPUT_KEY_ENTER) {
             ps2_memory_card_exit();
-            cardman_close();
+            ps2_cardman_close();
 
             switch (key) {
             case INPUT_KEY_PREV:
-                cardman_prev_channel();
+                ps2_cardman_prev_channel();
                 break;
             case INPUT_KEY_NEXT:
-                cardman_next_channel();
+                ps2_cardman_next_channel();
                 break;
             case INPUT_KEY_BACK:
-                cardman_prev_idx();
+                ps2_cardman_prev_idx();
                 break;
             case INPUT_KEY_ENTER:
-                cardman_next_idx();
+                ps2_cardman_next_idx();
                 break;
             }
 
-            printf("new card=%d chan=%d\n", cardman_get_idx(), cardman_get_channel());
+            printf("new card=%d chan=%d\n", ps2_cardman_get_idx(), ps2_cardman_get_channel());
             switching_card = 1;
             switching_card_timeout = time_us_64() + 1500 * 1000;
         }
@@ -641,9 +641,9 @@ void gui_do_ps2_card_switch(void) {
     UI_GOTO_SCREEN(scr_card_switch);
 
     uint64_t start = time_us_64();
-    cardman_set_progress_cb(reload_card_cb);
-    cardman_open();
-    cardman_set_progress_cb(NULL);
+    ps2_cardman_set_progress_cb(reload_card_cb);
+    ps2_cardman_open();
+    ps2_cardman_set_progress_cb(NULL);
     ps2_memory_card_enter();
     uint64_t end = time_us_64();
     printf("full card switch took = %.2f s\n", (end - start) / 1e6);
@@ -660,9 +660,9 @@ void gui_task(void) {
     static int displayed_card_channel = -1;
     static char card_idx_s[8];
     static char card_channel_s[8];
-    if (displayed_card_idx != cardman_get_idx() || displayed_card_channel != cardman_get_channel()) {
-        displayed_card_idx = cardman_get_idx();
-        displayed_card_channel = cardman_get_channel();
+    if (displayed_card_idx != ps2_cardman_get_idx() || displayed_card_channel != ps2_cardman_get_channel()) {
+        displayed_card_idx = ps2_cardman_get_idx();
+        displayed_card_channel = ps2_cardman_get_channel();
         snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
         snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
         lv_label_set_text(scr_main_idx_lbl, card_idx_s);

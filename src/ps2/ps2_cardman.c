@@ -27,7 +27,7 @@ static uint64_t cardprog_start;
 static size_t cardprog_pos;
 static int cardprog_wr;
 
-void cardman_init(void) {
+void ps2_cardman_init(void) {
     card_idx = settings_get_ps2_card();
     if (card_idx < IDX_MIN)
         card_idx = IDX_MIN;
@@ -36,7 +36,7 @@ void cardman_init(void) {
         card_chan = CHAN_MIN;
 }
 
-int cardman_write_sector(int sector, void *buf512) {
+int ps2_cardman_write_sector(int sector, void *buf512) {
     if (fd < 0)
         return -1;
 
@@ -49,7 +49,7 @@ int cardman_write_sector(int sector, void *buf512) {
     return 0;
 }
 
-void cardman_flush(void) {
+void ps2_cardman_flush(void) {
     if (fd >= 0)
         sd_flush(fd);
 }
@@ -202,7 +202,7 @@ static void genblock(size_t pos, void *vbuf) {
     }
 }
 
-void cardman_open(void) {
+void ps2_cardman_open(void) {
     char path[64];
 
     ensuredirs();
@@ -267,51 +267,51 @@ void cardman_open(void) {
     }
 }
 
-void cardman_close(void) {
+void ps2_cardman_close(void) {
     if (fd < 0)
         return;
-    cardman_flush();
+    ps2_cardman_flush();
     sd_close(fd);
     fd = -1;
 }
 
-void cardman_next_channel(void) {
+void ps2_cardman_next_channel(void) {
     card_chan += 1;
     if (card_chan > CHAN_MAX)
         card_chan = CHAN_MIN;
 }
 
-void cardman_prev_channel(void) {
+void ps2_cardman_prev_channel(void) {
     card_chan -= 1;
     if (card_chan < CHAN_MIN)
         card_chan = CHAN_MAX;
 }
 
-void cardman_next_idx(void) {
+void ps2_cardman_next_idx(void) {
     card_idx += 1;
     card_chan = CHAN_MIN;
 }
 
-void cardman_prev_idx(void) {
+void ps2_cardman_prev_idx(void) {
     card_idx -= 1;
     card_chan = CHAN_MIN;
     if (card_idx < IDX_MIN)
         card_idx = IDX_MIN;
 }
 
-int cardman_get_idx(void) {
+int ps2_cardman_get_idx(void) {
     return card_idx;
 }
 
-int cardman_get_channel(void) {
+int ps2_cardman_get_channel(void) {
     return card_chan;
 }
 
-void cardman_set_progress_cb(cardman_cb_t func) {
+void ps2_cardman_set_progress_cb(cardman_cb_t func) {
     cardman_cb = func;
 }
 
-char *cardman_get_progress_text(void) {
+char *ps2_cardman_get_progress_text(void) {
     static char progress[32];
 
     snprintf(progress, sizeof(progress), "%s %.2f kB/s", cardprog_wr ? "Wr" : "Rd",

@@ -96,7 +96,7 @@ void dirty_task(void) {
 
         ++hit;
 
-        if (cardman_write_sector(sector, flushbuf) != 0) {
+        if (ps2_cardman_write_sector(sector, flushbuf) != 0) {
             // TODO: do something if we get too many errors?
             // for now lets push it back into the heap and try again later
             printf("!! writing sector 0x%x failed\n", sector);
@@ -107,7 +107,7 @@ void dirty_task(void) {
         }
     }
     /* to make sure writes hit the storage medium */
-    cardman_flush();
+    ps2_cardman_flush();
 
     uint64_t end = time_us_64();
 
