@@ -111,7 +111,7 @@ void ps1_dirty_task(void) {
         }
     }
     /* to make sure writes hit the storage medium */
-    // ps1_cardman_flush();
+    ps1_cardman_flush();
 
     uint64_t end = time_us_64();
 
