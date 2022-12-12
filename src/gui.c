@@ -318,7 +318,8 @@ static void create_main_screen(void) {
     scr_main = ui_scr_create();
     lv_obj_add_event_cb(scr_main, evt_scr_main, LV_EVENT_ALL, NULL);
 
-    ui_header_create(scr_main, "PS2 Memory Card");
+    ui_header_create(scr_main, (settings_get_mode() == MODE_PS1) ?
+        "PS1 Memory Card" : "PS2 Memory Card");
 
     ui_label_create_at(scr_main, 0, 24, "Card");
 

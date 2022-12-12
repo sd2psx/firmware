@@ -65,34 +65,44 @@ int main() {
 
     printf("\n\n\nStarted! Clock %d; bus priority 0x%X\n", (int)clock_get_hz(clk_sys), (unsigned)bus_ctrl_hw->priority);
 
-    keystore_init();
     settings_init();
-    psram_init();
-    sd_init();
-    cardman_init();
-    dirty_init();
-    gui_init();
 
     if (settings_get_mode() == MODE_PS1) {
-        // TODO: implement
         printf("starting in PS1 mode\n");
+
+        sd_init();
+        gui_init();
+
+        while (1) {
+            debug_task();
+            // TODO: different ps1 dirty task
+            // dirty_task();
+            gui_task();
+            input_task();
+        }
     } else {
-        // TODO: implement (e.g. kestore, dirty only goes here)
         printf("starting in PS2 mode\n");
-    }
 
-    multicore_launch_core1(memory_card_main);
+        keystore_init();
+        psram_init();
+        sd_init();
+        cardman_init();
+        dirty_init();
+        gui_init();
 
-    printf("Starting memory card... ");
-    uint64_t start = time_us_64();
-    gui_do_card_switch();
-    uint64_t end = time_us_64();
-    printf("DONE! (%d us)\n", (int)(end - start));
+        multicore_launch_core1(memory_card_main);
 
-    while (1) {
-        debug_task();
-        dirty_task();
-        gui_task();
-        input_task();
+        printf("Starting memory card... ");
+        uint64_t start = time_us_64();
+        gui_do_card_switch();
+        uint64_t end = time_us_64();
+        printf("DONE! (%d us)\n", (int)(end - start));
+
+        while (1) {
+            debug_task();
+            dirty_task();
+            gui_task();
+            input_task();
+        }
     }
 }
