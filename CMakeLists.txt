@@ -25,6 +25,8 @@ add_executable(sd2psx
     src/settings.c
     src/bigmem.c
 
+    src/ps1/ps1_cardman.c
+    src/ps1/ps1_dirty.c
     src/ps1/ps1_memory_card.c
 
     src/ps2/ps2_memory_card.c

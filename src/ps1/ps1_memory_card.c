@@ -138,7 +138,10 @@ static int __time_critical_func(mc_do_state)(uint8_t ch) {
                 case 7 ... 134: card_image[OFF] = payload[byte_count - 1]; return payload[byte_count - 1];
                 case 135: return 0x5C; // TODO: handle wr checksum
                 case 136: return 0x5D;
-                case 137: return 0x47;
+                case 137: {
+                    ps1_dirty_mark(MSB * 256 + LSB);
+                    return 0x47;
+                }
             }
 
             #undef MSB

@@ -11,6 +11,8 @@
 #include "keystore.h"
 #include "settings.h"
 
+#include "ps1/ps1_cardman.h"
+
 #include "ps2/ps2_memory_card.h"
 #include "ps2/ps2_cardman.h"
 #include "ps2/ps2_dirty.h"
@@ -634,6 +636,16 @@ void gui_init(void) {
     lv_disp_set_theme(disp, th);
 
     create_ui();
+}
+
+void gui_do_ps1_card_switch(void) {
+    printf("switching the card now!\n");
+
+    uint64_t start = time_us_64();
+    ps1_cardman_open();
+    // ps2_memory_card_enter(); TODO - memcard enter for ps1
+    uint64_t end = time_us_64();
+    printf("full card switch took = %.2f s\n", (end - start) / 1e6);
 }
 
 void gui_do_ps2_card_switch(void) {

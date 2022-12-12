@@ -86,6 +86,28 @@ void settings_set_ps2_channel(int chan) {
     }
 }
 
+int settings_get_ps1_card(void) {
+    return settings.ps1_card;
+}
+
+int settings_get_ps1_channel(void) {
+    return settings.ps1_channel;
+}
+
+void settings_set_ps1_card(int card) {
+    if (card != settings.ps1_card) {
+        settings.ps1_card = card;
+        SETTINGS_UPDATE_FIELD(ps2_card);
+    }
+}
+
+void settings_set_ps1_channel(int chan) {
+    if (chan != settings.ps1_channel) {
+        settings.ps1_channel = chan;
+        SETTINGS_UPDATE_FIELD(ps2_channel);
+    }
+}
+
 int settings_get_mode(void) {
     return settings.sys_flags & 1;
 }

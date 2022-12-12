@@ -16,6 +16,8 @@
 #include "settings.h"
 
 #include "ps1/ps1_memory_card.h"
+#include "ps1/ps1_dirty.h"
+#include "ps1/ps1_cardman.h"
 
 #include "ps2/ps2_memory_card.h"
 #include "ps2/ps2_dirty.h"
@@ -73,14 +75,21 @@ int main() {
         printf("starting in PS1 mode\n");
 
         sd_init();
+        ps1_cardman_init();
+        ps1_dirty_init();
         gui_init();
 
         multicore_launch_core1(ps1_memory_card_main);
 
+        printf("Starting memory card... ");
+        uint64_t start = time_us_64();
+        gui_do_ps1_card_switch();
+        uint64_t end = time_us_64();
+        printf("DONE! (%d us)\n", (int)(end - start));
+
         while (1) {
             debug_task();
-            // TODO: different ps1 dirty task
-            // dirty_task();
+            ps1_dirty_task();
             gui_task();
             input_task();
         }
