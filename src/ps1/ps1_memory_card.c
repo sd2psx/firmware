@@ -6,6 +6,7 @@
 #include "ps1_mc_spi.pio.h"
 #include "debug.h"
 #include "bigmem.h"
+#include "ps1_dirty.h"
 
 #define card_image bigmem.ps1.card_image
 

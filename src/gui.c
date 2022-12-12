@@ -12,6 +12,7 @@
 #include "settings.h"
 
 #include "ps1/ps1_cardman.h"
+#include "ps1/ps1_memory_card.h"
 
 #include "ps2/ps2_memory_card.h"
 #include "ps2/ps2_cardman.h"
