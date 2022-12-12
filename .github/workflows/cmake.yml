@@ -2,9 +2,9 @@ name: CMake
 
 on:
   push:
-    branches: [ "ps2-wip" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "ps2-wip" ]
+    branches: [ "main" ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -34,7 +34,6 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-      
 
     - uses: marvinpinto/action-automatic-releases@v1.2.1
       # uses: marvinpinto/action-automatic-releases@919008cf3f741b179569b7a6fb4d8860689ab7f0
