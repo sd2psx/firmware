@@ -51,7 +51,6 @@ void settings_init(void) {
         printf("version magic mismatch, reset settings\n");
         settings_reset();
     }
-    printf("read settings ps2_channel %d\n", settings.ps2_channel);
 }
 
 void settings_update(void) {
@@ -97,14 +96,14 @@ int settings_get_ps1_channel(void) {
 void settings_set_ps1_card(int card) {
     if (card != settings.ps1_card) {
         settings.ps1_card = card;
-        SETTINGS_UPDATE_FIELD(ps2_card);
+        SETTINGS_UPDATE_FIELD(ps1_card);
     }
 }
 
 void settings_set_ps1_channel(int chan) {
     if (chan != settings.ps1_channel) {
         settings.ps1_channel = chan;
-        SETTINGS_UPDATE_FIELD(ps2_channel);
+        SETTINGS_UPDATE_FIELD(ps1_channel);
     }
 }
 
