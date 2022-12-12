@@ -675,7 +675,8 @@ void gui_task(void) {
         gui_do_ps2_card_switch();
     }
 
-    if (dirty_activity) {
+    // TODO: ps1 handling?
+    if (ps2_dirty_activity) {
         input_flush();
         lv_obj_clear_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
     } else {

@@ -4,10 +4,11 @@
 
 #include <stdio.h>
 
-spin_lock_t *dirty_spin_lock;
-volatile uint32_t dirty_lockout;
+spin_lock_t *ps2_dirty_spin_lock;
+volatile uint32_t ps2_dirty_lockout;
+int ps2_dirty_activity;
 
-int num_dirty, dirty_activity;
+static int num_dirty;
 static uint16_t dirty_heap[8 * 1024 * 1024 / 512];
 static uint8_t dirty_map[8 * 1024 * 1024 / 512]; // TODO: make an actual bitmap to save 8x mem?
 
@@ -17,11 +18,11 @@ static uint8_t dirty_map[8 * 1024 * 1024 / 512]; // TODO: make an actual bitmap 
     b = tmp; \
 } while (0);
 
-void dirty_init(void) {
-    dirty_spin_lock = spin_lock_init(spin_lock_claim_unused(1));
+void ps2_dirty_init(void) {
+    ps2_dirty_spin_lock = spin_lock_init(spin_lock_claim_unused(1));
 }
 
-void __time_critical_func(dirty_mark)(uint32_t sector) {
+void __time_critical_func(ps2_dirty_mark)(uint32_t sector) {
     if (sector < sizeof(dirty_map)) {
         /* already marked? */
         if (dirty_map[sector])
@@ -54,7 +55,7 @@ static void heapify(int i) {
     }
 }
 
-int dirty_get_marked(void) {
+int ps2_dirty_get_marked(void) {
     if (num_dirty == 0)
         return -1;
 
@@ -71,28 +72,28 @@ int dirty_get_marked(void) {
 }
 
 /* this goes through blocks in psram marked as dirty and flushes them to sd */
-void dirty_task(void) {
+void ps2_dirty_task(void) {
     static uint8_t flushbuf[512];
 
     int num_after = 0;
     int hit = 0;
     uint64_t start = time_us_64();
     while (1) {
-        if (!dirty_lockout_expired())
+        if (!ps2_dirty_lockout_expired())
             break;
         /* do up to 100ms of work per call to dirty_taks */
         if ((time_us_64() - start) > 100 * 1000)
             break;
 
-        dirty_lock();
-        int sector = dirty_get_marked();
+        ps2_dirty_lock();
+        int sector = ps2_dirty_get_marked();
         num_after = num_dirty;
         if (sector == -1) {
-            dirty_unlock();
+            ps2_dirty_unlock();
             break;
         }
         psram_read(sector * 512, flushbuf, 512);
-        dirty_unlock();
+        ps2_dirty_unlock();
 
         ++hit;
 
@@ -101,9 +102,9 @@ void dirty_task(void) {
             // for now lets push it back into the heap and try again later
             printf("!! writing sector 0x%x failed\n", sector);
 
-            dirty_lock();
-            dirty_mark(sector);
-            dirty_unlock();
+            ps2_dirty_lock();
+            ps2_dirty_mark(sector);
+            ps2_dirty_unlock();
         }
     }
     /* to make sure writes hit the storage medium */
@@ -114,8 +115,8 @@ void dirty_task(void) {
     if (hit)
         printf("remain to flush - %d - this one flushed %d and took %d ms\n", num_after, hit, (int)((end - start) / 1000));
 
-    if (num_after || !dirty_lockout_expired())
-        dirty_activity = 1;
+    if (num_after || !ps2_dirty_lockout_expired())
+        ps2_dirty_activity = 1;
     else
-        dirty_activity = 0;
+        ps2_dirty_activity = 0;
 }

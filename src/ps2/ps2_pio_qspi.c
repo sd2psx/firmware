@@ -88,7 +88,7 @@ static void __time_critical_func(dma_rx_done)(void) {
     /* note that this irq is called by core0 despite most dma tx started by core1 */
     dma_channel_acknowledge_irq0(PIO_SPI_DMA_RX_CHAN);
     gpio_put(PSRAM_CS, 1);
-    dirty_unlock();
+    ps2_dirty_unlock();
 }
 
 void pio_qspi_dma_init(const pio_spi_inst_t *spi) {

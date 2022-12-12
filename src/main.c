@@ -87,7 +87,7 @@ int main() {
         psram_init();
         sd_init();
         ps2_cardman_init();
-        dirty_init();
+        ps2_dirty_init();
         gui_init();
 
         multicore_launch_core1(ps2_memory_card_main);
@@ -100,7 +100,7 @@ int main() {
 
         while (1) {
             debug_task();
-            dirty_task();
+            ps2_dirty_task();
             gui_task();
             input_task();
         }

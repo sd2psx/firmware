@@ -68,9 +68,9 @@ if (ch == 0x11) {
     (void)ck; // TODO: validate checksum
     read_sector = raw.addr;
     if (read_sector * 512 + 512 <= CARD_SIZE) {
-        dirty_lockout_renew();
+        ps2_dirty_lockout_renew();
         /* the spinlock will be unlocked by the DMA irq once all data is tx'd */
-        dirty_lock();
+        ps2_dirty_lock();
         psram_read_dma(read_sector * 512, &readtmp, 512+4);
         // dma_channel_wait_for_finish_blocking(0);
         // dma_channel_wait_for_finish_blocking(1);
@@ -155,9 +155,9 @@ if (ch == 0x11) {
             /* a game may read more than one 528-byte sector in a sequence of read ops, e.g. re4 */
             ++read_sector;
             if (read_sector * 512 + 512 <= CARD_SIZE) {
-                dirty_lockout_renew();
+                ps2_dirty_lockout_renew();
                 /* the spinlock will be unlocked by the DMA irq once all data is tx'd */
-                dirty_lock();
+                ps2_dirty_lock();
                 psram_read_dma(read_sector * 512, &readtmp, 512+4);
                 // TODO: remove this if safe
                 // must make sure the dma completes for first byte before we start reading below
@@ -211,11 +211,11 @@ if (ch == 0x11) {
     if (is_write) {
         is_write = 0;
         if (write_sector * 512 + 512 <= CARD_SIZE) {
-            dirty_lockout_renew();
-            dirty_lock();
+            ps2_dirty_lockout_renew();
+            ps2_dirty_lock();
             psram_write(write_sector * 512, writetmp, 512);
-            dirty_mark(write_sector);
-            dirty_unlock();
+            ps2_dirty_mark(write_sector);
+            ps2_dirty_unlock();
 #ifdef DEBUG_MC_PROTOCOL
             debug_printf("WR 0x%08X : %02X %02X .. %08X %08X %08X\n",
                 write_sector * 512, writetmp[0], writetmp[1],
@@ -236,13 +236,13 @@ if (ch == 0x11) {
     /* do erase */
     if (erase_sector * 512 + 512 * ERASE_SECTORS <= CARD_SIZE) {
         memset(readtmp.buf, 0xFF, 512);
-        dirty_lockout_renew();
-        dirty_lock();
+        ps2_dirty_lockout_renew();
+        ps2_dirty_lock();
         for (int i = 0; i < ERASE_SECTORS; ++i) {
             psram_write((erase_sector + i) * 512, readtmp.buf, 512);
-            dirty_mark(erase_sector + i);
+            ps2_dirty_mark(erase_sector + i);
         }
-        dirty_unlock();
+        ps2_dirty_unlock();
 #ifdef DEBUG_MC_PROTOCOL
         debug_printf("ER 0x%08X\n", erase_sector * 512);
 #endif
