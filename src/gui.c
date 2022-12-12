@@ -550,7 +550,7 @@ static void create_menu_screen(void) {
     {
         cont = ui_menu_cont_create_nav(main_page);
         ui_label_create_grow(cont, "Mode");
-        ui_label_create(cont, "PS2");
+        ui_label_create(cont, (settings_get_mode() == MODE_PS1) ? "PS1" : "PS2");
         ui_menu_set_load_page_event(menu, cont, mode_page);
 
         cont = ui_menu_cont_create_nav(main_page);
