@@ -15,12 +15,16 @@
 .wrap
 
 .program dat_writer
+.side_set 1 opt pindirs
+    set pindirs, 0           ; release DAT line (set pin as input = Hi-Z)
     wait 0 gpio PIN_PSX_SEL  ; wait for SEL
 .wrap_target
     pull block               ; pull a byte to send, blocking
 
-    set pindirs, 1 [5]	     ; keep ack low for more than half PSX clock
-    set pindirs, 0		     ; Set ACK pin to Hi-Z
+    ; trigger ACK
+    nop side 1 [5]
+    nop [5]
+    nop side 0
 
     set x, 7
 sendbit:
@@ -55,7 +59,8 @@ static inline void dat_writer_program_init(PIO pio, uint sm, uint offset) {
     pio_sm_config c = dat_writer_program_get_default_config(offset);
 
     sm_config_set_out_pins(&c, PIN_PSX_DAT, 1);
-    sm_config_set_set_pins(&c, PIN_PSX_ACK, 1);
+    sm_config_set_set_pins(&c, PIN_PSX_DAT, 1);
+    sm_config_set_sideset_pins(&c, PIN_PSX_ACK);
 
     /* configure ACK pin for open drain */
     pio_sm_set_pins_with_mask(pio, sm, 0x00000000, 1 << PIN_PSX_ACK);
