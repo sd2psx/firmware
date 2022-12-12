@@ -201,8 +201,9 @@ static void evt_scr_main(lv_event_t *event) {
         }
 
         // TODO: if there was a card op recently (1s timeout?), should refuse to switch
+        // TODO: ps1 support here
         if (key == INPUT_KEY_PREV || key == INPUT_KEY_NEXT || key == INPUT_KEY_BACK || key == INPUT_KEY_ENTER) {
-            memory_card_exit();
+            ps2_memory_card_exit();
             cardman_close();
 
             switch (key) {
@@ -635,7 +636,7 @@ void gui_init(void) {
     create_ui();
 }
 
-void gui_do_card_switch(void) {
+void gui_do_ps2_card_switch(void) {
     printf("switching the card now!\n");
     UI_GOTO_SCREEN(scr_card_switch);
 
@@ -643,7 +644,7 @@ void gui_do_card_switch(void) {
     cardman_set_progress_cb(reload_card_cb);
     cardman_open();
     cardman_set_progress_cb(NULL);
-    memory_card_enter();
+    ps2_memory_card_enter();
     uint64_t end = time_us_64();
     printf("full card switch took = %.2f s\n", (end - start) / 1e6);
 
@@ -668,9 +669,10 @@ void gui_task(void) {
         lv_label_set_text(scr_main_channel_lbl, card_channel_s);
     }
 
+    // TODO: ps1 card switching here
     if (switching_card && switching_card_timeout < time_us_64() && !input_is_any_down()) {
         switching_card = 0;
-        gui_do_card_switch();
+        gui_do_ps2_card_switch();
     }
 
     if (dirty_activity) {

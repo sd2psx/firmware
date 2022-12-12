@@ -154,7 +154,7 @@ static inline void __time_critical_func(mc_respond_slow)(uint8_t ch) {
     pio_sm_put_blocking(pio0, dat_writer_slow.sm, ch);
 }
 
-uint8_t Table[] = {
+static uint8_t Table[] = {
 	0x00, 0x87, 0x96, 0x11, 0xa5, 0x22, 0x33, 0xb4,0xb4, 0x33, 0x22, 0xa5, 0x11, 0x96, 0x87, 0x00,
 	0xc3, 0x44, 0x55, 0xd2, 0x66, 0xe1, 0xf0, 0x77,0x77, 0xf0, 0xe1, 0x66, 0xd2, 0x55, 0x44, 0xc3,
 	0xd2, 0x55, 0x44, 0xc3, 0x77, 0xf0, 0xe1, 0x66,0x66, 0xe1, 0xf0, 0x77, 0xc3, 0x44, 0x55, 0xd2,
@@ -244,26 +244,22 @@ static void __time_critical_func(doubleDesDecrypt)(void *key, void *data)
 	desDecrypt(key, data);
 }
 
-static void __time_critical_func(xor_bit)(const void* a, const void* b, void* Result, size_t Length)
-{
+static void __time_critical_func(xor_bit)(const void* a, const void* b, void* Result, size_t Length) {
 	size_t i;
 	for (i = 0; i < Length; i++) {
 		((uint8_t*)Result)[i] = ((uint8_t*)a)[i] ^ ((uint8_t*)b)[i];
 	}
 }
 
-void __time_critical_func(generateIvSeedNonce)()
-{
-	for (int i = 0; i < 8; i++)
-	{
+static void __time_critical_func(generateIvSeedNonce)() {
+	for (int i = 0; i < 8; i++) {
 		iv[i] = 0x42;
 		seed[i] = keysource[i] ^ iv[i];
 		nonce[i] = 0x42;
 	}
 }
 
-void __time_critical_func(generateResponse)()
-{
+static void __time_critical_func(generateResponse)() {
 	doubleDesDecrypt(key, MechaChallenge1);
 	uint8_t random[8] = { 0 };
 	xor_bit(MechaChallenge1, ps2_civ, random, 8);
@@ -282,7 +278,7 @@ void __time_critical_func(generateResponse)()
 	doubleDesEncrypt(key, CardResponse3);
 }
 
-void __time_critical_func(mc_main_loop)(void) {
+static void __time_critical_func(mc_main_loop)(void) {
     while (1) {
         uint8_t cmd, ch;
 
@@ -315,7 +311,7 @@ EXIT_REQUEST:
     mc_exit_response = 1;
 }
 
-void __time_critical_func(mc_main)(void) {
+static void __time_critical_func(mc_main)(void) {
     while (1) {
         while (!mc_enter_request)
         {}
@@ -327,7 +323,7 @@ void __time_critical_func(mc_main)(void) {
 
 static gpio_irq_callback_t callbacks[NUM_CORES];
 
-void __time_critical_func(RAM_gpio_acknowledge_irq)(uint gpio, uint32_t events) {
+static void __time_critical_func(RAM_gpio_acknowledge_irq)(uint gpio, uint32_t events) {
     check_gpio_param(gpio);
     iobank0_hw->intr[gpio / 8] = events << (4 * (gpio % 8));
 }
@@ -352,7 +348,7 @@ static void __time_critical_func(RAM_gpio_default_irq_handler)(void) {
     }
 }
 
-void my_gpio_set_irq_callback(gpio_irq_callback_t callback) {
+static void my_gpio_set_irq_callback(gpio_irq_callback_t callback) {
     uint core = get_core_num();
     if (callbacks[core]) {
         if (!callback) {
@@ -365,13 +361,13 @@ void my_gpio_set_irq_callback(gpio_irq_callback_t callback) {
     }
 }
 
-void my_gpio_set_irq_enabled_with_callback(uint gpio, uint32_t events, bool enabled, gpio_irq_callback_t callback) {
+static void my_gpio_set_irq_enabled_with_callback(uint gpio, uint32_t events, bool enabled, gpio_irq_callback_t callback) {
     gpio_set_irq_enabled(gpio, events, enabled);
     my_gpio_set_irq_callback(callback);
     if (enabled) irq_set_enabled(IO_IRQ_BANK0, true);
 }
 
-void memory_card_main(void) {
+void ps2_memory_card_main(void) {
     init_pio();
     generateIvSeedNonce();
 
@@ -387,7 +383,7 @@ void memory_card_main(void) {
 
 static int memcard_running;
 
-void memory_card_exit(void) {
+void ps2_memory_card_exit(void) {
     if (!memcard_running)
         return;
 
@@ -398,7 +394,7 @@ void memory_card_exit(void) {
     memcard_running = 0;
 }
 
-void memory_card_enter(void) {
+void ps2_memory_card_enter(void) {
     if (memcard_running)
         return;
 

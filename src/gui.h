@@ -5,7 +5,7 @@
 
 void gui_init(void);
 void gui_task(void);
-void gui_do_card_switch(void);
+void gui_do_ps2_card_switch(void);
 
 void evt_menu_page(lv_event_t *event);
 

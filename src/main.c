@@ -90,11 +90,11 @@ int main() {
         dirty_init();
         gui_init();
 
-        multicore_launch_core1(memory_card_main);
+        multicore_launch_core1(ps2_memory_card_main);
 
         printf("Starting memory card... ");
         uint64_t start = time_us_64();
-        gui_do_card_switch();
+        gui_do_ps2_card_switch();
         uint64_t end = time_us_64();
         printf("DONE! (%d us)\n", (int)(end - start));
 
