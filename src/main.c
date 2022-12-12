@@ -73,6 +73,14 @@ int main() {
     dirty_init();
     gui_init();
 
+    if (settings_get_mode() == MODE_PS1) {
+        // TODO: implement
+        printf("starting in PS1 mode\n");
+    } else {
+        // TODO: implement (e.g. kestore, dirty only goes here)
+        printf("starting in PS2 mode\n");
+    }
+
     multicore_launch_core1(memory_card_main);
 
     printf("Starting memory card... ");

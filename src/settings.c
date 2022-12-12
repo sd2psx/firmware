@@ -17,13 +17,15 @@ typedef struct {
     uint8_t ps1_flags; // TODO: single bit options: freepsxboot, pocketstation, freepsxboot slot
     // TODO: more ps1 settings: model for freepsxboot
     uint8_t ps2_flags; // TODO: single bit options: autoboot
+    uint8_t sys_flags; // TODO: single bit options: whether ps1 or ps2 mode, etc
+    uint8_t unused[3];
     // TODO: display settings?
     // TODO: how do we store last used channel for cards that use autodetecting w/ gameid?
 } settings_t;
 
-#define SETTINGS_VERSION_MAGIC (0xABCD0001)
+#define SETTINGS_VERSION_MAGIC (0xABCD0002)
 
-_Static_assert(sizeof(settings_t) == 12, "unexpected padding in the settings structure");
+_Static_assert(sizeof(settings_t) == 16, "unexpected padding in the settings structure");
 
 static settings_t settings;
 
@@ -53,9 +55,14 @@ void settings_init(void) {
 }
 
 void settings_update(void) {
-    int ret = wear_leveling_write(0, &settings, sizeof(settings));
-    printf("write settings ret=%d\n", ret);
+    wear_leveling_write(0, &settings, sizeof(settings));
 }
+
+void settings_update_part(void *settings_ptr, uint32_t sz) {
+    wear_leveling_write((uint8_t*)settings_ptr - (uint8_t*)&settings, settings_ptr, sz);
+}
+
+#define SETTINGS_UPDATE_FIELD(field) settings_update_part(&settings.field, sizeof(settings.field))
 
 int settings_get_ps2_card(void) {
     return settings.ps2_card;
@@ -65,18 +72,32 @@ int settings_get_ps2_channel(void) {
     return settings.ps2_channel;
 }
 
-void settings_set_ps2_card(int x) {
-    if (x != settings.ps2_card) {
-        settings.ps2_card = x;
-        // TODO: figure to update single field
-        settings_update();
+void settings_set_ps2_card(int card) {
+    if (card != settings.ps2_card) {
+        settings.ps2_card = card;
+        SETTINGS_UPDATE_FIELD(ps2_card);
     }
 }
 
-void settings_set_ps2_channel(int x) {
-    if (x != settings.ps2_channel) {
-        // TODO: figure to update single field
-        settings.ps2_channel = x;
-        settings_update();
+void settings_set_ps2_channel(int chan) {
+    if (chan != settings.ps2_channel) {
+        settings.ps2_channel = chan;
+        SETTINGS_UPDATE_FIELD(ps2_channel);
+    }
+}
+
+int settings_get_mode(void) {
+    return settings.sys_flags & 1;
+}
+
+void settings_set_mode(int mode) {
+    if (mode != MODE_PS1 && mode != MODE_PS2)
+        return;
+
+    if (mode != settings_get_mode()) {
+        /* clear old mode, then set what was passed in */
+        settings.sys_flags &= ~1;
+        settings.sys_flags |= mode;
+        SETTINGS_UPDATE_FIELD(sys_flags);
     }
 }

@@ -9,6 +9,7 @@
 #include "input.h"
 #include "ui_menu.h"
 #include "keystore.h"
+#include "settings.h"
 
 #include "ps2/ps2_memory_card.h"
 #include "ps2/ps2_cardman.h"
@@ -295,7 +296,8 @@ static void evt_do_civ_deploy(lv_event_t *event) {
 static void evt_switch_to_ps1(lv_event_t *event) {
     (void)event;
 
-    // TODO: write eeprom
+    settings_set_mode(MODE_PS1);
+
     UI_GOTO_SCREEN(scr_switch_nag);
     terminated = 1;
 }
@@ -303,7 +305,8 @@ static void evt_switch_to_ps1(lv_event_t *event) {
 static void evt_switch_to_ps2(lv_event_t *event) {
     (void)event;
 
-    // TODO: write eeprom
+    settings_set_mode(MODE_PS2);
+
     UI_GOTO_SCREEN(scr_switch_nag);
     terminated = 1;
 }
