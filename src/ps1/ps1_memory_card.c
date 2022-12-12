@@ -11,7 +11,7 @@
 
 static uint64_t us_startup;
 
-static int byte_count;
+static size_t byte_count;
 static volatile int reset;
 static int ignore;
 static uint8_t flag;
@@ -63,7 +63,7 @@ static void __time_critical_func(init_pio)(void) {
     dat_writer_program_init(pio0, dat_writer.sm, dat_writer.offset);
 }
 
-static void __time_critical_func(card_deselected)(uint32_t gpio, uint32_t event_mask) {
+static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask) {
     if (gpio == PIN_PSX_SEL && (event_mask & GPIO_IRQ_EDGE_RISE))
         reset_pio();
 }
