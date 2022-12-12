@@ -22,6 +22,7 @@ typedef struct {
 } pio_t;
 
 static pio_t cmd_reader, dat_writer;
+static volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_enter_response;
 
 static void __time_critical_func(reset_pio)(void) {
     // debug_printf("!!\n");
@@ -69,7 +70,11 @@ static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask
 }
 
 static uint8_t __time_critical_func(recv_cmd)(void) {
-    return (uint8_t) (pio_sm_get_blocking(pio0, cmd_reader.sm) >> 24);
+    while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm))  {
+        if (mc_exit_request)
+            return 0;
+    }
+    return (uint8_t) (pio_sm_get(pio0, cmd_reader.sm) >> 24);
 }
 
 static int __time_critical_func(mc_do_state)(uint8_t ch) {
@@ -157,11 +162,15 @@ static void __time_critical_func(mc_respond)(uint8_t ch) {
     pio_sm_put_blocking(pio0, dat_writer.sm, ~ch & 0xFF);
 }
 
-static void __no_inline_not_in_flash_func(mc_main_loop)(void) {
+static void __time_critical_func(mc_main_loop)(void) {
     flag = 8;
 
     while (1) {
         uint8_t ch = recv_cmd();
+
+        if (mc_exit_request)
+            break;
+
         /* If this ch belongs to the next command sequence */
         if (reset)
             reset = ignore = byte_count = 0;
@@ -180,6 +189,18 @@ static void __no_inline_not_in_flash_func(mc_main_loop)(void) {
             // debug_printf("R %02X -> %02X\n", ch, next);
             mc_respond(next);
         }
+    }
+
+    mc_exit_response = 1;
+}
+
+static void __no_inline_not_in_flash_func(mc_main)(void) {
+    while (1) {
+        while (!mc_enter_request)
+        {}
+        mc_enter_response = 1;
+
+        mc_main_loop();
     }
 }
 
@@ -237,5 +258,29 @@ void ps1_memory_card_main(void) {
 
     my_gpio_set_irq_enabled_with_callback(PIN_PSX_SEL, GPIO_IRQ_EDGE_RISE, 1, card_deselected);
 
-    mc_main_loop();
+    mc_main();
+}
+
+static int memcard_running;
+
+void ps1_memory_card_exit(void) {
+    if (!memcard_running)
+        return;
+
+    mc_exit_request = 1;
+    while (!mc_exit_response)
+    {}
+    mc_exit_request = mc_exit_response = 0;
+    memcard_running = 0;
+}
+
+void ps1_memory_card_enter(void) {
+    if (memcard_running)
+        return;
+
+    mc_enter_request = 1;
+    while (!mc_enter_response)
+    {}
+    mc_enter_request = mc_enter_response = 0;
+    memcard_running = 1;
 }

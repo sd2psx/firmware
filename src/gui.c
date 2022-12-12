@@ -205,25 +205,47 @@ static void evt_scr_main(lv_event_t *event) {
         // TODO: if there was a card op recently (1s timeout?), should refuse to switch
         // TODO: ps1 support here
         if (key == INPUT_KEY_PREV || key == INPUT_KEY_NEXT || key == INPUT_KEY_BACK || key == INPUT_KEY_ENTER) {
-            ps2_memory_card_exit();
-            ps2_cardman_close();
+            if (settings_get_mode() == MODE_PS1) {
+                ps1_memory_card_exit();
+                ps1_cardman_close();
 
-            switch (key) {
-            case INPUT_KEY_PREV:
-                ps2_cardman_prev_channel();
-                break;
-            case INPUT_KEY_NEXT:
-                ps2_cardman_next_channel();
-                break;
-            case INPUT_KEY_BACK:
-                ps2_cardman_prev_idx();
-                break;
-            case INPUT_KEY_ENTER:
-                ps2_cardman_next_idx();
-                break;
+                switch (key) {
+                case INPUT_KEY_PREV:
+                    ps1_cardman_prev_channel();
+                    break;
+                case INPUT_KEY_NEXT:
+                    ps1_cardman_next_channel();
+                    break;
+                case INPUT_KEY_BACK:
+                    ps1_cardman_prev_idx();
+                    break;
+                case INPUT_KEY_ENTER:
+                    ps1_cardman_next_idx();
+                    break;
+                }
+
+                printf("new PS1 card=%d chan=%d\n", ps1_cardman_get_idx(), ps1_cardman_get_channel());
+            } else {
+                ps2_memory_card_exit();
+                ps2_cardman_close();
+
+                switch (key) {
+                case INPUT_KEY_PREV:
+                    ps2_cardman_prev_channel();
+                    break;
+                case INPUT_KEY_NEXT:
+                    ps2_cardman_next_channel();
+                    break;
+                case INPUT_KEY_BACK:
+                    ps2_cardman_prev_idx();
+                    break;
+                case INPUT_KEY_ENTER:
+                    ps2_cardman_next_idx();
+                    break;
+                }
+
+                printf("new PS2 card=%d chan=%d\n", ps2_cardman_get_idx(), ps2_cardman_get_channel());
             }
-
-            printf("new card=%d chan=%d\n", ps2_cardman_get_idx(), ps2_cardman_get_channel());
             switching_card = 1;
             switching_card_timeout = time_us_64() + 1500 * 1000;
         }
@@ -643,7 +665,7 @@ void gui_do_ps1_card_switch(void) {
 
     uint64_t start = time_us_64();
     ps1_cardman_open();
-    // ps2_memory_card_enter(); TODO - memcard enter for ps1
+    ps1_memory_card_enter();
     uint64_t end = time_us_64();
     printf("full card switch took = %.2f s\n", (end - start) / 1e6);
 }
@@ -668,31 +690,49 @@ void gui_do_ps2_card_switch(void) {
 void gui_task(void) {
     input_update_display(g_navbar);
 
-    static int displayed_card_idx = -1;
-    static int displayed_card_channel = -1;
-    static char card_idx_s[8];
-    static char card_channel_s[8];
-    if (displayed_card_idx != ps2_cardman_get_idx() || displayed_card_channel != ps2_cardman_get_channel()) {
-        displayed_card_idx = ps2_cardman_get_idx();
-        displayed_card_channel = ps2_cardman_get_channel();
-        snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
-        snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
-        lv_label_set_text(scr_main_idx_lbl, card_idx_s);
-        lv_label_set_text(scr_main_channel_lbl, card_channel_s);
-    }
+    if (settings_get_mode() == MODE_PS1) {
+        static int displayed_card_idx = -1;
+        static int displayed_card_channel = -1;
+        static char card_idx_s[8];
+        static char card_channel_s[8];
+        if (displayed_card_idx != ps1_cardman_get_idx() || displayed_card_channel != ps1_cardman_get_channel()) {
+            displayed_card_idx = ps1_cardman_get_idx();
+            displayed_card_channel = ps1_cardman_get_channel();
+            snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
+            snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
+            lv_label_set_text(scr_main_idx_lbl, card_idx_s);
+            lv_label_set_text(scr_main_channel_lbl, card_channel_s);
+        }
 
-    // TODO: ps1 card switching here
-    if (switching_card && switching_card_timeout < time_us_64() && !input_is_any_down()) {
-        switching_card = 0;
-        gui_do_ps2_card_switch();
-    }
-
-    // TODO: ps1 handling?
-    if (ps2_dirty_activity) {
-        input_flush();
-        lv_obj_clear_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
+        if (switching_card && switching_card_timeout < time_us_64() && !input_is_any_down()) {
+            switching_card = 0;
+            gui_do_ps1_card_switch();
+        }
     } else {
-        lv_obj_add_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
+        static int displayed_card_idx = -1;
+        static int displayed_card_channel = -1;
+        static char card_idx_s[8];
+        static char card_channel_s[8];
+        if (displayed_card_idx != ps2_cardman_get_idx() || displayed_card_channel != ps2_cardman_get_channel()) {
+            displayed_card_idx = ps2_cardman_get_idx();
+            displayed_card_channel = ps2_cardman_get_channel();
+            snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
+            snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
+            lv_label_set_text(scr_main_idx_lbl, card_idx_s);
+            lv_label_set_text(scr_main_channel_lbl, card_channel_s);
+        }
+
+        if (switching_card && switching_card_timeout < time_us_64() && !input_is_any_down()) {
+            switching_card = 0;
+            gui_do_ps2_card_switch();
+        }
+
+        if (ps2_dirty_activity) {
+            input_flush();
+            lv_obj_clear_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
+        }
     }
 
     gui_tick();

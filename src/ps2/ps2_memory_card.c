@@ -45,7 +45,7 @@ uint8_t *eccptr;
 uint8_t writetmp[528];
 int is_write, is_dma_read;
 uint32_t readptr, writeptr;
-volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_enter_response;
+static volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_enter_response;
 static uint8_t hostkey[9];
 
 static inline void __time_critical_func(RAM_pio_sm_drain_tx_fifo)(PIO pio, uint sm) {
