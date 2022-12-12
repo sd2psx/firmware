@@ -93,6 +93,7 @@ void ps1_cardman_open(void) {
                 fatal("cannot init memcard");
             memcpy(&bigmem.ps1.card_image[pos], flushbuf, BLOCK_SIZE);
         }
+        sd_flush(fd);
 
         uint64_t end = time_us_64();
         printf("OK!\n");

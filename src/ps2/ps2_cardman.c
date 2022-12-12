@@ -234,6 +234,7 @@ void ps2_cardman_open(void) {
             if (cardman_cb)
                 cardman_cb(100 * pos / CARD_SIZE);
         }
+        sd_flush(fd);
 
         uint64_t end = time_us_64();
         printf("OK!\n");
