@@ -706,9 +706,18 @@ void gui_task(void) {
         if (displayed_card_idx != ps1_cardman_get_idx() || displayed_card_channel != ps1_cardman_get_channel()) {
             displayed_card_idx = ps1_cardman_get_idx();
             displayed_card_channel = ps1_cardman_get_channel();
-            snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
             snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
-            lv_label_set_text(scr_main_idx_lbl, card_idx_s);
+            if (displayed_card_idx == 0)
+            {
+                char text[0xFF];
+                ps1_cardman_get_gametext(text);
+                lv_label_set_text(scr_main_idx_lbl, text);
+            }
+            else
+            {
+                snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
+                lv_label_set_text(scr_main_idx_lbl, card_idx_s);
+            }
             lv_label_set_text(scr_main_channel_lbl, card_channel_s);
         }
 

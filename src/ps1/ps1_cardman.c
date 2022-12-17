@@ -17,6 +17,7 @@ static uint8_t flushbuf[BLOCK_SIZE];
 static int fd = -1;
 
 #define IDX_MIN 1
+#define IDX_GAMEID 0
 #define CHAN_MIN 1
 #define CHAN_MAX 8
 
@@ -81,7 +82,6 @@ void ps1_cardman_open(void) {
     ensuredirs();
     if (card_game_id[0] != 0x00) {
         snprintf(path, sizeof(path), "MemoryCards/PS1/%s/%s-%d.mcd", card_game_id, card_game_id, card_chan);
-
     } else {
         snprintf(path, sizeof(path), "MemoryCards/PS1/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
     }
@@ -164,8 +164,11 @@ void ps1_cardman_next_idx(void) {
 void ps1_cardman_prev_idx(void) {
     card_idx -= 1;
     card_chan = CHAN_MIN;
-    if (card_idx < IDX_MIN)
+    if ((card_idx == IDX_GAMEID) 
+        && (card_game_id[0] == 0x00))
         card_idx = IDX_MIN;
+    else if (card_idx < IDX_GAMEID)
+        card_idx = IDX_GAMEID;
 }
 
 int ps1_cardman_get_idx(void) {
@@ -178,4 +181,10 @@ int ps1_cardman_get_channel(void) {
 
 void ps1_cardman_set_gameid(const char* game_id) {
     memcpy(card_game_id, game_id, 0xFF);
+    card_idx = IDX_GAMEID;
+    card_chan = CHAN_MIN;
+}
+
+void ps1_cardman_get_gametext(char* const game_text) {
+    memcpy(game_text, card_game_id, 0xFF);
 }
