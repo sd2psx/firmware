@@ -57,24 +57,28 @@ void ps1_odeman_task(void)
     if (mc_pro_flags&MCP_NXT_CH)
     {
         ps1_memory_card_exit();
+        ps1_cardman_close();
         ps1_cardman_next_channel();
         ps1_memory_card_enter();
     }
     if (mc_pro_flags&MCP_PRV_CH)
     {
         ps1_memory_card_exit();
+        ps1_cardman_close();
         ps1_cardman_prev_channel();
         ps1_memory_card_enter();
     }
     if (mc_pro_flags&MCP_NXT_CARD)
     {
         ps1_memory_card_exit();
+        ps1_cardman_close();
         ps1_cardman_next_idx();
         ps1_memory_card_enter();
     }
     if (mc_pro_flags&MCP_PRV_CARD)
     {
         ps1_memory_card_exit();
+        ps1_cardman_close();
         ps1_cardman_prev_idx();
         ps1_memory_card_enter();
     }
