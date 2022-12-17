@@ -1,12 +1,14 @@
 #include "hardware/gpio.h"
 #include "hardware/timer.h"
 #include "pico/platform.h"
+#include "string.h"
 
 #include "config.h"
 #include "ps1_mc_spi.pio.h"
 #include "debug.h"
 #include "bigmem.h"
 #include "ps1_dirty.h"
+#include <ps1/ps1_memory_card.h>
 
 #define card_image bigmem.ps1.card_image
 
@@ -16,6 +18,11 @@ static size_t byte_count;
 static volatile int reset;
 static int ignore;
 static uint8_t flag;
+
+static size_t game_id_length;
+static char received_game_id[0xFF];
+uint8_t mc_pro_flags;
+
 
 typedef struct {
     uint32_t offset;
@@ -148,11 +155,65 @@ static int __time_critical_func(mc_do_state)(uint8_t ch) {
                     ps1_dirty_mark(MSB * 256 + LSB);
                     return 0x47;
                 }
-            }
+            } 
 
             #undef MSB
             #undef LSB
             #undef OFF
+        }
+        // Memcard Pro Commands after this line
+        // See https://gitlab.com/chriz2600/ps1-game-id-transmission
+        else if (cmd == 0x20) {   // MCP Ping Command
+            switch (byte_count) {
+                case 2:
+                case 3: return 0x00;
+                case 4: return 0x27;
+                case 5: return 0xFF; 
+            }
+        } else if (cmd == 0x21) { // MCP Game ID
+            if (byte_count == game_id_length + 4)
+            {
+                memcpy(received_game_id, &payload[4], game_id_length);
+                mc_pro_flags |= MCP_GAME_ID;
+            }
+            switch (byte_count) {
+                case 2: memset(received_game_id, 0, 0xFF); return 0x00;
+                case 3: return 0x00;
+                case 4: game_id_length = payload[byte_count - 1]; debug_printf("Length %u\n", game_id_length); return 0x00;
+                case 5 ... 255: return payload[byte_count - 1];
+            }
+        } else if (cmd == 0x22) { // MCP Prv Channel
+            switch (byte_count) {
+                case 2: debug_printf("Receiving Prv Channel");
+                case 3: return 0x00;
+                case 4: return 0x20;
+                case 5: mc_pro_flags |= MCP_PRV_CH; return 0xFF; 
+            }
+        } else if (cmd == 0x23) { // MCP Nxt Channel
+            switch (byte_count) {
+                case 2: debug_printf("Receiving Nxt Channel");
+                case 3: return 0x00;
+                case 4: return 0x20;
+                case 5: mc_pro_flags |= MCP_NXT_CH; return 0xFF; 
+            }
+        } else if (cmd == 0x24) { // MCP Prv Card
+            
+            switch (byte_count) {
+                case 2: debug_printf("Receiving Prv Card");
+                case 3: return 0x00;
+                case 4: return 0x20;
+                case 5: mc_pro_flags |= MCP_PRV_CARD; return 0xFF; 
+            }
+        } else if (cmd == 0x25) { // MCP Nxt Card
+            
+            switch (byte_count) {
+                case 2: debug_printf("Receiving Nxt Card");
+                case 3: return 0x00;
+                case 4: return 0x20;
+                case 5: mc_pro_flags |= MCP_NXT_CARD; return 0xFF; 
+            }
+        } else {
+            debug_printf("Received unknown command: %u", ch);
         }
     }
 
@@ -284,4 +345,13 @@ void ps1_memory_card_enter(void) {
     {}
     mc_enter_request = mc_enter_response = 0;
     memcard_running = 1;
+    mc_pro_flags = 0;
+    game_id_length = 255;
+    memset(received_game_id, 0, 0xFF);
+}
+
+void ps1_memory_card_get_game_id(char* const game_id)
+{
+    memset(game_id, 0, 0xFF);
+    memcpy(game_id, received_game_id, game_id_length);
 }

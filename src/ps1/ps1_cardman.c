@@ -22,6 +22,7 @@ static int fd = -1;
 
 static int card_idx;
 static int card_chan;
+static char card_game_id[0xFF];
 
 void ps1_cardman_init(void) {
     card_idx = settings_get_ps1_card();
@@ -30,6 +31,7 @@ void ps1_cardman_init(void) {
     card_chan = settings_get_ps1_channel();
     if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
         card_chan = CHAN_MIN;
+    memset(card_game_id, 0, 0xFF);
 }
 
 int ps1_cardman_write_sector(int sector, void *buf512) {
@@ -52,7 +54,11 @@ void ps1_cardman_flush(void) {
 
 static void ensuredirs(void) {
     char cardpath[32];
-    snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/Card%d", card_idx);
+    if (card_game_id[0] != 0x00) {
+        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/%s", card_game_id);
+    } else {
+        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/Card%d", card_idx);
+    }
 
     sd_mkdir("MemoryCards");
     sd_mkdir("MemoryCards/PS1");
@@ -73,7 +79,12 @@ void ps1_cardman_open(void) {
     char path[64];
 
     ensuredirs();
-    snprintf(path, sizeof(path), "MemoryCards/PS1/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
+    if (card_game_id[0] != 0x00) {
+        snprintf(path, sizeof(path), "MemoryCards/PS1/%s/%s-%d.mcd", card_game_id, card_game_id, card_chan);
+
+    } else {
+        snprintf(path, sizeof(path), "MemoryCards/PS1/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
+    }
 
     printf("Switching to card path = %s\n", path);
 
@@ -163,4 +174,8 @@ int ps1_cardman_get_idx(void) {
 
 int ps1_cardman_get_channel(void) {
     return card_chan;
+}
+
+void ps1_cardman_set_gameid(const char* game_id) {
+    memcpy(card_game_id, game_id, 0xFF);
 }

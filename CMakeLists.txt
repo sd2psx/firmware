@@ -29,6 +29,7 @@ add_executable(sd2psx
     src/ps1/ps1_dirty.c
     src/ps1/ps1_memory_card.c
     src/ps1/ps1_empty_card.c
+    src/ps1/ps1_odeman.c
 
     src/ps2/ps2_memory_card.c
     src/ps2/ps2_dirty.c

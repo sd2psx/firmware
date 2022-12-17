@@ -12,3 +12,5 @@ void ps1_cardman_next_channel(void);
 void ps1_cardman_prev_channel(void);
 void ps1_cardman_next_idx(void);
 void ps1_cardman_prev_idx(void);
+
+void ps1_cardman_set_gameid(const char* game_id);
