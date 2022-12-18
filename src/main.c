@@ -56,10 +56,8 @@ int main() {
     input_init();
     check_bootloader_reset();
 
-//    stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
+    stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
         //stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
-    stdio_usb_init();
-//    sleep_ms(2000);
 
     printf("prepare...\n");
     int mhz = 240;
