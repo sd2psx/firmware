@@ -350,6 +350,11 @@ void ps1_memory_card_enter(void) {
     memset(received_game_id, 0, 0xFF);
 }
 
+void ps1_memory_card_reset_ode_flags(void)
+{
+    mc_pro_flags = 0;
+}
+
 uint8_t ps1_memory_card_get_ode_flags(void)
 {
     return mc_pro_flags;

@@ -15,4 +15,5 @@ void ps1_memory_card_enter(void);
 void ps1_memory_card_exit(void);
 
 uint8_t ps1_memory_card_get_ode_flags(void);
+void ps1_memory_card_reset_ode_flags(void);
 void ps1_memory_card_get_game_id(char* const game_id);
