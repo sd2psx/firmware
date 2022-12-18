@@ -80,18 +80,17 @@ void ps1_cardman_open(void) {
     char path[64];
 
     ensuredirs();
-    if (card_game_id[0] != 0x00) {
+    if ((card_game_id[0] != 0x00) && (card_idx < IDX_MIN)) {
         snprintf(path, sizeof(path), "MemoryCards/PS1/%s/%s-%d.mcd", card_game_id, card_game_id, card_chan);
     } else {
         snprintf(path, sizeof(path), "MemoryCards/PS1/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
+        /* this is ok to do on every boot because it wouldn't update if the value is the same as currently stored */
+        settings_set_ps1_card(card_idx);
+        settings_set_ps1_channel(card_chan);
     }
 
     printf("Switching to card path = %s\n", path);
-
-    /* this is ok to do on every boot because it wouldn't update if the value is the same as currently stored */
-    settings_set_ps1_card(card_idx);
-    settings_set_ps1_channel(card_chan);
-
+    
     if (!sd_exists(path)) {
         fd = sd_open(path, O_RDWR | O_CREAT | O_TRUNC);
 
