@@ -37,6 +37,7 @@ void ps1_odeman_init(void)
 
 void ps1_odeman_task(void)
 {
+    uint8_t mc_pro_flags = ps1_memory_card_get_ode_flags();
     if (mc_pro_flags&MCP_GAME_ID)
     {
         char game_id[0xFF];

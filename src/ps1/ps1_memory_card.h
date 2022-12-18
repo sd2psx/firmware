@@ -10,10 +10,9 @@
 #define MCP_PRV_CARD    (0b10000U)
 
 
-extern uint8_t mc_pro_flags;
-
 void ps1_memory_card_main(void);
 void ps1_memory_card_enter(void);
 void ps1_memory_card_exit(void);
 
+uint8_t ps1_memory_card_get_ode_flags(void);
 void ps1_memory_card_get_game_id(char* const game_id);

@@ -21,7 +21,7 @@ static uint8_t flag;
 
 static size_t game_id_length;
 static char received_game_id[0xFF];
-uint8_t mc_pro_flags;
+static uint8_t mc_pro_flags;
 
 
 typedef struct {
@@ -348,6 +348,11 @@ void ps1_memory_card_enter(void) {
     mc_pro_flags = 0;
     game_id_length = 255;
     memset(received_game_id, 0, 0xFF);
+}
+
+uint8_t ps1_memory_card_get_ode_flags(void)
+{
+    return mc_pro_flags;
 }
 
 void ps1_memory_card_get_game_id(char* const game_id)
