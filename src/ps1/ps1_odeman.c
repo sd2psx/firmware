@@ -4,6 +4,7 @@
 #include "ps1_cardman.h"
 #include "debug.h"
 
+#include <gui.h>
 #include <string.h>
 
 static void clean_title_id(const char* const in_title_id, char* const out_title_id);
@@ -49,45 +50,50 @@ void ps1_odeman_task(void)
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_set_gameid(cleaned_game_id);
-        sleep_ms(500);
+        sleep_ms(100);
         ps1_cardman_open();
         ps1_memory_card_enter();
+        gui_request_refresh();
     }
     if (mc_pro_flags&MCP_NXT_CH)
     {
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_next_channel();
-        sleep_ms(500);
+        sleep_ms(100);
         ps1_cardman_open();
         ps1_memory_card_enter();
+        gui_request_refresh();
     }
     if (mc_pro_flags&MCP_PRV_CH)
     {
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_prev_channel();
-        sleep_ms(500);
+        sleep_ms(100);
         ps1_cardman_open();
         ps1_memory_card_enter();
+        gui_request_refresh();
     }
     if (mc_pro_flags&MCP_NXT_CARD)
     {
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_next_idx();
-        sleep_ms(500);
+        sleep_ms(100);
         ps1_cardman_open();
         ps1_memory_card_enter();
+        gui_request_refresh();
     }
     if (mc_pro_flags&MCP_PRV_CARD)
     {
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_prev_idx();
-        sleep_ms(500);
+        sleep_ms(100);
         ps1_cardman_open();
         ps1_memory_card_enter();
+        gui_request_refresh();
     }
     ps1_memory_card_reset_ode_flags();
 }

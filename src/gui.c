@@ -32,6 +32,7 @@ static int have_oled;
 static int switching_card;
 static uint64_t switching_card_timeout;
 static int terminated;
+static bool refresh_gui;
 
 #define COLOR_FG      lv_color_white()
 #define COLOR_BG      lv_color_black()
@@ -666,6 +667,12 @@ void gui_init(void) {
     lv_disp_set_theme(disp, th);
 
     create_ui();
+    refresh_gui = false;
+}
+
+void gui_request_refresh(void)
+{
+    refresh_gui = true;
 }
 
 void gui_do_ps1_card_switch(void) {
@@ -703,7 +710,8 @@ void gui_task(void) {
         static int displayed_card_channel = -1;
         static char card_idx_s[8];
         static char card_channel_s[8];
-        if (displayed_card_idx != ps1_cardman_get_idx() || displayed_card_channel != ps1_cardman_get_channel()) {
+        // TODO Fix Switching based on game id --> not yet implemented 
+        if (displayed_card_idx != ps1_cardman_get_idx() || displayed_card_channel != ps1_cardman_get_channel() || refresh_gui) {
             displayed_card_idx = ps1_cardman_get_idx();
             displayed_card_channel = ps1_cardman_get_channel();
             snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
@@ -725,6 +733,7 @@ void gui_task(void) {
             switching_card = 0;
             gui_do_ps1_card_switch();
         }
+        refresh_gui = false;
     } else {
         static int displayed_card_idx = -1;
         static int displayed_card_channel = -1;
