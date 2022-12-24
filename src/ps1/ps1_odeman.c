@@ -7,6 +7,8 @@
 #include <gui.h>
 #include <string.h>
 
+#define CARD_SWITCH_DELAY_MS    (120)
+
 static void clean_title_id(const char* const in_title_id, char* const out_title_id);
 
 
@@ -50,7 +52,7 @@ void ps1_odeman_task(void)
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_set_gameid(cleaned_game_id);
-        sleep_ms(100);
+        sleep_ms(CARD_SWITCH_DELAY_MS);
         ps1_cardman_open();
         ps1_memory_card_enter();
         gui_request_refresh();
@@ -60,7 +62,7 @@ void ps1_odeman_task(void)
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_next_channel();
-        sleep_ms(100);
+        sleep_ms(CARD_SWITCH_DELAY_MS);
         ps1_cardman_open();
         ps1_memory_card_enter();
         gui_request_refresh();
@@ -70,7 +72,7 @@ void ps1_odeman_task(void)
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_prev_channel();
-        sleep_ms(100);
+        sleep_ms(CARD_SWITCH_DELAY_MS);
         ps1_cardman_open();
         ps1_memory_card_enter();
         gui_request_refresh();
@@ -80,7 +82,7 @@ void ps1_odeman_task(void)
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_next_idx();
-        sleep_ms(100);
+        sleep_ms(CARD_SWITCH_DELAY_MS);
         ps1_cardman_open();
         ps1_memory_card_enter();
         gui_request_refresh();
@@ -90,7 +92,7 @@ void ps1_odeman_task(void)
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_prev_idx();
-        sleep_ms(100);
+        sleep_ms(CARD_SWITCH_DELAY_MS);
         ps1_cardman_open();
         ps1_memory_card_enter();
         gui_request_refresh();
