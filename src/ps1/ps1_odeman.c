@@ -9,42 +9,56 @@
 
 #define CARD_SWITCH_DELAY_MS    (120)
 
-static void clean_title_id(const char* const in_title_id, char* const out_title_id);
 
+void ps1_odeman_init(void) {
 
-static void clean_title_id(const char* const in_title_id, char* const out_title_id)
-{
-    int idx_in_title = 0, idx_out_title = 0;
+}
 
-    while (in_title_id[idx_in_title] != 0x00)
-    {
-        if ((in_title_id[idx_in_title] == ';') || (in_title_id[idx_in_title] == 0x00)) {
-            out_title_id[idx_out_title++] = 0x00;
-            break;
-        } else if ((in_title_id[idx_in_title] == '\\') || (in_title_id[idx_in_title] == '/')) {
-            idx_out_title = 0;
-        } else if (in_title_id[idx_in_title] == '_') {
-            out_title_id[idx_out_title++] = '-';
-        } else if (in_title_id[idx_in_title] != '.') {
-            out_title_id[idx_out_title++] = in_title_id[idx_in_title];
-        } else {
+void ps1_odeman_task(void) {
+    uint8_t ode_command = ps1_memory_card_get_ode_command();
+
+    if (ode_command != 0U) {
+        ps1_memory_card_reset_ode_command();
+        ps1_memory_card_exit();
+        ps1_cardman_close();
+
+        switch (ode_command) {
+            case MCP_GAME_ID:
+                printf("Received Game ID");
+                const char *game_id;
+                game_id = ps1_memory_card_get_game_id();
+                printf("PS1 Game ID Received: %s\n", game_id);
+                ps1_cardman_set_gameid(game_id);
+                break;
+            case MCP_NXT_CARD:
+                ps1_cardman_next_idx();
+                break;
+            case MCP_PRV_CARD:
+                ps1_cardman_prev_idx();
+                break;
+            case MCP_NXT_CH:
+                ps1_cardman_next_channel();
+                break;
+            case MCP_PRV_CH:
+                ps1_cardman_prev_channel();
+                break;
+            default:
+                printf("Invalid ODE Command received.");
+                break;
         }
-        idx_in_title++;
+
+        sleep_ms(CARD_SWITCH_DELAY_MS); // This delay is required, so ODE can register the card change
+
+        ps1_cardman_open();
+        ps1_memory_card_enter();
+        gui_request_refresh();
     }
-}
 
-void ps1_odeman_init(void)
-{
+    /*
 
-}
-
-void ps1_odeman_task(void)
-{
-    uint8_t mc_pro_flags = ps1_memory_card_get_ode_flags();
-    if (mc_pro_flags&MCP_GAME_ID)
-    {
+    if (mc_pro_flags&MCP_GAME_ID) {
         char game_id[0xFF];
-        char cleaned_game_id[0xFF] = { 0x00 };
+        char cleaned_game_id[0x10] = { 0x00 };
         ps1_memory_card_get_game_id(game_id);
         debug_printf("PS1 Game ID Received: %s\n", game_id);
         clean_title_id(game_id, cleaned_game_id);
@@ -57,8 +71,7 @@ void ps1_odeman_task(void)
         ps1_memory_card_enter();
         gui_request_refresh();
     }
-    if (mc_pro_flags&MCP_NXT_CH)
-    {
+    if (mc_pro_flags&MCP_NXT_CH) {
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_next_channel();
@@ -67,8 +80,7 @@ void ps1_odeman_task(void)
         ps1_memory_card_enter();
         gui_request_refresh();
     }
-    if (mc_pro_flags&MCP_PRV_CH)
-    {
+    if (mc_pro_flags&MCP_PRV_CH) {
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_prev_channel();
@@ -77,8 +89,7 @@ void ps1_odeman_task(void)
         ps1_memory_card_enter();
         gui_request_refresh();
     }
-    if (mc_pro_flags&MCP_NXT_CARD)
-    {
+    if (mc_pro_flags&MCP_NXT_CARD) {
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_next_idx();
@@ -87,8 +98,7 @@ void ps1_odeman_task(void)
         ps1_memory_card_enter();
         gui_request_refresh();
     }
-    if (mc_pro_flags&MCP_PRV_CARD)
-    {
+    if (mc_pro_flags&MCP_PRV_CARD) {
         ps1_memory_card_exit();
         ps1_cardman_close();
         ps1_cardman_prev_idx();
@@ -97,5 +107,5 @@ void ps1_odeman_task(void)
         ps1_memory_card_enter();
         gui_request_refresh();
     }
-    ps1_memory_card_reset_ode_flags();
+    */
 }

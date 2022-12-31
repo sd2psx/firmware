@@ -23,7 +23,7 @@ static int fd = -1;
 
 static int card_idx;
 static int card_chan;
-static char card_game_id[0xFF];
+static char card_game_id[0x10];
 
 void ps1_cardman_init(void) {
     card_idx = settings_get_ps1_card();
@@ -32,7 +32,7 @@ void ps1_cardman_init(void) {
     card_chan = settings_get_ps1_channel();
     if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
         card_chan = CHAN_MIN;
-    memset(card_game_id, 0, 0xFF);
+    memset(card_game_id, 0, 0x10);
 }
 
 int ps1_cardman_write_sector(int sector, void *buf512) {
@@ -179,11 +179,11 @@ int ps1_cardman_get_channel(void) {
 }
 
 void ps1_cardman_set_gameid(const char* game_id) {
-    memcpy(card_game_id, game_id, 0xFF);
+    memcpy(card_game_id, game_id, 0x10);
     card_idx = IDX_GAMEID;
     card_chan = CHAN_MIN;
 }
 
 void ps1_cardman_get_gametext(char* const game_text) {
-    memcpy(game_text, card_game_id, 0xFF);
+    memcpy(game_text, card_game_id, 0x10);
 }
