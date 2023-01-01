@@ -208,14 +208,14 @@ static int __time_critical_func(mc_do_state)(uint8_t ch) {
             }
         } else if (cmd == 0x22) { // MCP Prv Channel
             switch (byte_count) {
-                case 2: printf("Receiving Prv Channel");
+                case 2: 
                 case 3: return 0x00;
                 case 4: return 0x20;
                 case 5: mc_pro_command = MCP_PRV_CH; return 0xFF; 
             }
         } else if (cmd == 0x23) { // MCP Nxt Channel
             switch (byte_count) {
-                case 2: printf("Receiving Nxt Channel");
+                case 2: 
                 case 3: return 0x00;
                 case 4: return 0x20;
                 case 5: mc_pro_command = MCP_NXT_CH; return 0xFF; 
@@ -223,7 +223,7 @@ static int __time_critical_func(mc_do_state)(uint8_t ch) {
         } else if (cmd == 0x24) { // MCP Prv Card
             
             switch (byte_count) {
-                case 2: printf("Receiving Prv Card");
+                case 2: 
                 case 3: return 0x00;
                 case 4: return 0x20;
                 case 5: mc_pro_command = MCP_PRV_CARD; return 0xFF; 
@@ -231,7 +231,7 @@ static int __time_critical_func(mc_do_state)(uint8_t ch) {
         } else if (cmd == 0x25) { // MCP Nxt Card
             
             switch (byte_count) {
-                case 2: printf("Receiving Nxt Card");
+                case 2:
                 case 3: return 0x00;
                 case 4: return 0x20;
                 case 5: mc_pro_command = MCP_NXT_CARD; return 0xFF; 
