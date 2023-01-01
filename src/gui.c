@@ -626,7 +626,10 @@ static void create_ui(void) {
 }
 
 void gui_init(void) {
-    have_oled = oled_init();
+    if ((have_oled = oled_init())) {
+        oled_clear();
+        oled_show();
+    }
 
     lv_init();
 
