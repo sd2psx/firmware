@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "oled.h"
 #include "pico/platform.h"
 
 static char debug_queue[1024];
@@ -39,6 +40,17 @@ void __time_critical_func(debug_printf)(const char *format, ...) {
 
 void fatal(const char *s) {
     printf("%s\n", s);
+
+    static int fatal_reentry;
+    if (!fatal_reentry) {
+        fatal_reentry = 1;
+        oled_init();
+        oled_clear();
+        oled_draw_text("FATAL ERROR\n\n");
+        oled_draw_text(s);
+        oled_show();
+    }
+
     while (1) {
     }
 }
