@@ -154,6 +154,7 @@ int blit16_TextNExplicit(blit_pixel *Buffer, blit_pixel Value, int Scale, int Bu
 				case '\b': x -=           Scale * blit16_ADVANCE; break; /* non-destructive backspace */
 				case '\t': x +=       4 * Scale * blit16_ADVANCE; break; /* tab: add 4 spaces */
 				case '\n': y += DrawDir * Scale * blit16_ROW_ADVANCE; ++LinesPrinted; /* new line; fallthrough */
+				/* fallthrough */
 				case '\r': x  = StartX;                        break; /* carriage return */
 			}
 		}
