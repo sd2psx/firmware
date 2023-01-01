@@ -4,12 +4,12 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "ssd1306.h"
 #include "lvgl.h"
 #include "input.h"
 #include "ui_menu.h"
 #include "keystore.h"
 #include "settings.h"
+#include "oled.h"
 
 #include "ps1/ps1_cardman.h"
 #include "ps1/ps1_memory_card.h"
@@ -20,7 +20,6 @@
 
 #include "ui_theme_mono.h"
 
-static ssd1306_t oled_disp = { .external_vcc = 0 };
 /* Displays the line at the bottom for long pressing buttons */
 static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text, *g_activity_frame;
 
@@ -109,17 +108,17 @@ static lv_obj_t* ui_header_create(lv_obj_t *parent, const char *text) {
 
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
     if (have_oled) {
-        ssd1306_clear(&oled_disp);
+        oled_clear();
 
         for(int y = area->y1; y <= area->y2; y++) {
             for(int x = area->x1; x <= area->x2; x++) {
                 if (color_p->full)
-                    ssd1306_draw_pixel(&oled_disp, x, y);
+                    oled_draw_pixel(x, y);
                 color_p++;
             }
         }
 
-        ssd1306_show(&oled_disp);
+        oled_show();
     }
     lv_disp_flush_ready(disp_drv);
 }
@@ -627,13 +626,7 @@ static void create_ui(void) {
 }
 
 void gui_init(void) {
-    i2c_init(OLED_I2C_PERIPH, OLED_I2C_CLOCK);
-    gpio_set_function(OLED_I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(OLED_I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(OLED_I2C_SDA);
-    gpio_pull_up(OLED_I2C_SCL);
-
-    have_oled = ssd1306_init(&oled_disp, DISPLAY_WIDTH, DISPLAY_HEIGHT, 0x3C, OLED_I2C_PERIPH);
+    have_oled = oled_init();
 
     lv_init();
 

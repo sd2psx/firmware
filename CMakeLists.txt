@@ -24,6 +24,7 @@ add_executable(sd2psx
     src/keystore.c
     src/settings.c
     src/bigmem.c
+    src/oled.c
 
     src/ps1/ps1_cardman.c
     src/ps1/ps1_dirty.c

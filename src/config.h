@@ -10,6 +10,7 @@
 
 #define OLED_I2C_SDA 28
 #define OLED_I2C_SCL 25
+#define OLED_I2C_ADDR 0x3C
 #define OLED_I2C_PERIPH i2c0
 #define OLED_I2C_CLOCK 400000
 
