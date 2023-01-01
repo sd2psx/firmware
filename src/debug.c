@@ -29,17 +29,22 @@ void __time_critical_func(debug_printf)(const char *format, ...) {
 
     va_list args;
     va_start(args, format);
-
     vsnprintf(buf, sizeof(buf), format, args);
-
     va_end(args);
 
     for (char *c = buf; *c; ++c)
         debug_put(*c);
 }
 
-void fatal(const char *s) {
-    printf("%s\n", s);
+void fatal(const char *format, ...) {
+    char buf[128];
+
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buf, sizeof(buf), format, args);
+    va_end(args);
+
+    printf("%s\n", buf);
 
     static int fatal_reentry;
     if (!fatal_reentry) {
@@ -47,7 +52,7 @@ void fatal(const char *s) {
         oled_init();
         oled_clear();
         oled_draw_text("FATAL ERROR\n\n");
-        oled_draw_text(s);
+        oled_draw_text(buf);
         oled_show();
     }
 

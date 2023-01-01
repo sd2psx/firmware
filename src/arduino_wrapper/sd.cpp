@@ -23,8 +23,15 @@ extern "C" void sd_init() {
     SPI1.setCS(SD_CS);
 
     int ret = sd.begin(SdSpiConfig(SD_CS, DEDICATED_SPI, SD_BAUD, &SPI1));
-    if (ret != 1)
-        fatal("failed to mount the card");
+    if (ret != 1) {
+        if (sd.sdErrorCode()) {
+            fatal("failed to mount the card\nSdError: 0x%02X,0x%02X\ncheck the card", sd.sdErrorCode(), sd.sdErrorData());
+        } else if (!sd.fatType()) {
+            fatal("failed to mount the card\ncheck the card is formatted correctly");
+        } else {
+            fatal("failed to mount the card\nUNKNOWN");
+        }
+    }
 }
 
 void sdCsInit(SdCsPin_t pin) {
