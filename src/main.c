@@ -57,7 +57,6 @@ int main() {
     check_bootloader_reset();
 
     stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
-        //stdio_uart_init_full(UART_PERIPH, UART_BAUD, UART_TX, UART_RX);
 
     printf("prepare...\n");
     int mhz = 240;
