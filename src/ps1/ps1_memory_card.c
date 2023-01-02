@@ -202,7 +202,7 @@ static int __time_critical_func(mc_do_state)(uint8_t ch) {
             switch (byte_count) {
                 case 2: memset(received_game_id, 0, 0x10); return 0x00;
                 case 3: return 0x00;
-                case 4: game_id_length = payload[byte_count - 1]; debug_printf("Length %u\n", game_id_length); return 0x00;
+                case 4: game_id_length = payload[byte_count - 1]; return 0x00;
                 case 5 ... 255: return payload[byte_count - 1];
             }
         } else if (cmd == 0x22) { // MCP Prv Channel
