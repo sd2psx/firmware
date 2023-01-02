@@ -184,6 +184,6 @@ void ps1_cardman_set_gameid(const char* game_id) {
     card_chan = CHAN_MIN;
 }
 
-void ps1_cardman_get_gametext(char* const game_text) {
-    memcpy(game_text, card_game_id, 0x10);
+const char* ps1_cardman_get_gametext(void) {
+    return card_game_id;
 }

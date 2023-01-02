@@ -716,8 +716,7 @@ void gui_task(void) {
             displayed_card_channel = ps1_cardman_get_channel();
             snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
             if (displayed_card_idx == 0) {
-                char text[0x10];
-                ps1_cardman_get_gametext(text);
+                const char* text = ps1_cardman_get_gametext();
                 lv_label_set_text(scr_main_idx_lbl, text);
             }
             else {
