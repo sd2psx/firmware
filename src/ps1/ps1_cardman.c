@@ -55,7 +55,7 @@ void ps1_cardman_flush(void) {
 
 static void ensuredirs(void) {
     char cardpath[32];
-    if (card_game_id[0] != 0x00) {
+    if ((card_game_id[0] != 0x00) && (card_idx < IDX_MIN) ) {
         snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/%s", card_game_id);
     } else {
         snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/Card%d", card_idx);
