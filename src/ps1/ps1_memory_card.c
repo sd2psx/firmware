@@ -35,7 +35,7 @@ static volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_ente
 
 
 static void __time_critical_func(clean_title_id)(const uint8_t* const in_title_id, char* const out_title_id, const size_t in_title_id_length) {
-    int idx_in_title = 0, idx_out_title = 0;
+    uint16_t idx_in_title = 0, idx_out_title = 0;
 
     while ( (in_title_id[idx_in_title] != 0x00) 
             && (idx_in_title < in_title_id_length)
