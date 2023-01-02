@@ -710,7 +710,7 @@ void gui_task(void) {
         static int displayed_card_channel = -1;
         static char card_idx_s[8];
         static char card_channel_s[8];
-        // TODO Fix Switching based on game id --> not yet implemented 
+
         if (displayed_card_idx != ps1_cardman_get_idx() || displayed_card_channel != ps1_cardman_get_channel() || refresh_gui) {
             displayed_card_idx = ps1_cardman_get_idx();
             displayed_card_channel = ps1_cardman_get_channel();
