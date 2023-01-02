@@ -34,12 +34,12 @@ static pio_t cmd_reader, dat_writer;
 static volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_enter_response;
 
 
-static void __time_critical_func(clean_title_id)(const uint8_t* const in_title_id, char* const out_title_id, const size_t in_title_id_length) {
+static void __time_critical_func(clean_title_id)(const uint8_t* const in_title_id, char* const out_title_id, const size_t in_title_id_length, const size_t out_buffer_size) {
     uint16_t idx_in_title = 0, idx_out_title = 0;
 
     while ( (in_title_id[idx_in_title] != 0x00) 
             && (idx_in_title < in_title_id_length)
-            && (idx_out_title < 0x10) ) {
+            && (idx_out_title < out_buffer_size) ) {
         if ((in_title_id[idx_in_title] == ';') || (in_title_id[idx_in_title] == 0x00)) {
             out_title_id[idx_out_title++] = 0x00;
             break;
@@ -196,11 +196,11 @@ static int __time_critical_func(mc_do_state)(uint8_t ch) {
         } else if (cmd == 0x21) { // MCP Game ID
             if (byte_count == game_id_length + 4)
             {
-                clean_title_id(&payload[4], received_game_id, game_id_length);
+                clean_title_id(&payload[4], received_game_id, game_id_length, sizeof(received_game_id));
                 mc_pro_command = MCP_GAME_ID;
             }
             switch (byte_count) {
-                case 2: memset(received_game_id, 0, 0x10); return 0x00;
+                case 2: memset(received_game_id, 0, sizeof(received_game_id)); return 0x00;
                 case 3: return 0x00;
                 case 4: game_id_length = payload[byte_count - 1]; return 0x00;
                 case 5 ... 255: return payload[byte_count - 1];
@@ -369,8 +369,8 @@ void ps1_memory_card_enter(void) {
     mc_enter_request = mc_enter_response = 0;
     memcard_running = 1;
     mc_pro_command = 0;
-    game_id_length = 0x10;
-    memset(received_game_id, 0, 0x10);
+    game_id_length = sizeof(received_game_id);
+    memset(received_game_id, 0, sizeof(received_game_id));
 }
 
 void ps1_memory_card_reset_ode_command(void) {
