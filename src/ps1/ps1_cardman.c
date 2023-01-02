@@ -179,7 +179,7 @@ int ps1_cardman_get_channel(void) {
 }
 
 void ps1_cardman_set_gameid(const char* game_id) {
-    memcpy(card_game_id, game_id, 0x10);
+    strlcpy(card_game_id, game_id, sizeof(card_game_id));
     card_idx = IDX_GAMEID;
     card_chan = CHAN_MIN;
 }
