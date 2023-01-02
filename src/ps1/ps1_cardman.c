@@ -32,7 +32,7 @@ void ps1_cardman_init(void) {
     card_chan = settings_get_ps1_channel();
     if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
         card_chan = CHAN_MIN;
-    memset(card_game_id, 0, 0x10);
+    memset(card_game_id, 0, sizeof(card_game_id));
 }
 
 int ps1_cardman_write_sector(int sector, void *buf512) {
