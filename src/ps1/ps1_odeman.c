@@ -23,13 +23,13 @@ void ps1_odeman_task(void) {
         ps1_cardman_close();
 
         switch (ode_command) {
-            case MCP_GAME_ID:
-                debug_printf("Received Game ID: ");
+            case MCP_GAME_ID: {
                 const char *game_id;
                 game_id = ps1_memory_card_get_game_id();
-                debug_printf("%s\n", game_id);
+                debug_printf("Received Game ID: %s\n", game_id);
                 ps1_cardman_set_gameid(game_id);
                 break;
+            }
             case MCP_NXT_CARD:
                 debug_printf("Received next card.\n");
                 ps1_cardman_next_idx();
