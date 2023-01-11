@@ -1,7 +1,9 @@
 #include "ps1_cardman.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "sd.h"
 #include "debug.h"
@@ -21,9 +23,163 @@ static int fd = -1;
 #define CHAN_MIN 1
 #define CHAN_MAX 8
 
+#define MAX_GAME_NAME_LENGTH    (127)
+#define MAX_PREFIX_LENGTH       (4)
+#define MAX_GAME_ID_LENGTH      (16)
+typedef struct
+{
+    char name[MAX_GAME_NAME_LENGTH];
+    char parent_id[MAX_GAME_ID_LENGTH];
+} GameStruct;
+
+extern const char _binary_gameDbPS1_bin_start, _binary_gameDbPS1_bin_size;
+
+
 static int card_idx;
 static int card_chan;
-static char card_game_id[0x10];
+static char card_game_id[MAX_GAME_ID_LENGTH];
+static char card_game_name[MAX_GAME_NAME_LENGTH];
+
+static bool sanityCheckGameId(const char* const game_id) {
+    uint8_t i = 0U;
+
+    char splittable_game_id[MAX_GAME_ID_LENGTH];
+    strlcpy(splittable_game_id, game_id, MAX_GAME_ID_LENGTH);
+    char* prefix = strtok(splittable_game_id, "-");
+    char* id = strtok(NULL, "-");
+
+    while (prefix[i] != 0x00) {
+        if (!isalpha((int)prefix[i])) {
+            return false;
+        }
+        i++;
+    }
+    if (i == 0) {
+        return false;
+    }
+    else {
+        i = 0;
+    }
+
+    while (prefix[i] != 0x00) {
+        if (!isdigit((int)id[i])) {
+            return false;
+        }
+        i++;
+    }
+
+    return (i>0);
+}
+
+static uint32_t charArrayToUint32(char in[4]) {
+#if BIG_ENDIAN
+    char inter[4] = {in[3], in[2], in[1], in[0]};
+#else
+    char* inter = in;
+#endif
+    return *(uint32_t*)inter;
+}
+
+static uint32_t findPrefixOffset(int file_id, uint32_t numericPrefix) {
+    uint32_t offset = 0;
+
+    sd_seek(file_id, 0);
+
+    char entry[8] = {};
+    while (offset == 0) {
+
+        if (sd_read(file_id, entry, 8) == 8) {
+            uint32_t currentprefix = charArrayToUint32(entry), currentoffset = charArrayToUint32(&entry[4]);
+            if (currentprefix == numericPrefix) {
+                offset = currentoffset;
+            }
+            if ((currentprefix == 0U) && (currentoffset == 0U)) {
+                break;
+            }
+        }
+        else
+        {
+            // Should never happen
+            break;
+        }
+    }
+
+    return offset;
+}
+
+static bool getName(int file_id, uint32_t name_offset, char* const game_name) {
+    char buff[MAX_GAME_NAME_LENGTH] = {};
+    
+    if (sd_seek(file_id, name_offset) == 0) {
+        if (sd_read(file_id, buff, MAX_GAME_NAME_LENGTH) > 0) {
+            if (buff[0] != 0x00) {
+                strlcpy(game_name, buff, MAX_GAME_NAME_LENGTH);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static bool getGameData(const char* const id) {
+    char prefixString[MAX_PREFIX_LENGTH + 1] = {};
+    char idString[10] = {};
+    char entry[12] = {};
+    uint32_t numericPrefix = 0, prefixOffset = 0, currentId = 0, numericId = 0;
+    
+    if (sd_exists("gameDbPS1.dat") && (sanityCheckGameId(id))) {
+        int file_id = sd_open("gameDbPS1.dat", 0x00);
+
+        char* copy = strdup(id);
+        char* split = strtok(copy, "-");
+        
+        if (strlen(split) > 0) {
+            strlcpy(prefixString, split, MAX_PREFIX_LENGTH + 1);
+            for (uint8_t i = 0; i < MAX_PREFIX_LENGTH; i++)
+            {
+                prefixString[i] = toupper(prefixString[i]);
+            }
+            numericPrefix = charArrayToUint32(prefixString);
+        }
+
+        split = strtok(NULL, "-");
+
+        if (strlen(split) > 0) {
+            strlcpy(idString, split, 11);
+            numericId = atoi(idString);
+        }
+
+        prefixOffset = findPrefixOffset(file_id, numericPrefix);
+
+        debug_printf("Numeric ID %d ID %s\n", numericId, idString);
+        debug_printf("NumericPrefix %d Prefix %s: %d\n", numericPrefix, prefixString, prefixOffset);
+        
+        if (sd_seek(file_id, prefixOffset) == 0) {
+            do {
+                sd_read(file_id, entry, 12);
+                currentId = charArrayToUint32(entry);
+                if (currentId == numericId)  {
+                    uint32_t name_offset = charArrayToUint32(&entry[4]);
+
+                    debug_printf("Found ID - Name Offset: %d, Parent ID: %d\n", (int)name_offset, (int)charArrayToUint32(&entry[8]));
+                    
+                    snprintf(card_game_id, MAX_GAME_ID_LENGTH,  "%s-%0*d", prefixString, (int)strlen(idString), (int)charArrayToUint32(&entry[8]));
+                    
+                    debug_printf("Parent ID: %s\n", card_game_id);
+
+                    return getName(file_id, name_offset, card_game_name);
+                }
+            } while (currentId != 0);
+        }
+    }
+    else {
+        memset(card_game_name, 0x00, MAX_GAME_NAME_LENGTH);
+    }
+
+    return false;
+}
+
+
 
 void ps1_cardman_init(void) {
     card_idx = settings_get_ps1_card();
@@ -179,11 +335,18 @@ int ps1_cardman_get_channel(void) {
 }
 
 void ps1_cardman_set_gameid(const char* game_id) {
-    strlcpy(card_game_id, game_id, sizeof(card_game_id));
+    if (!getGameData(game_id))
+    {
+        strlcpy(card_game_id, game_id, sizeof(card_game_id));
+    }
     card_idx = IDX_GAMEID;
     card_chan = CHAN_MIN;
 }
 
-const char* ps1_cardman_get_gametext(void) {
+const char* ps1_cardman_get_gameid(void) {
     return card_game_id;
+}
+
+const char* ps1_cardman_get_gamename(void) {
+    return card_game_name;
 }

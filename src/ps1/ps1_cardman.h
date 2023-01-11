@@ -14,4 +14,5 @@ void ps1_cardman_next_idx(void);
 void ps1_cardman_prev_idx(void);
 
 void ps1_cardman_set_gameid(const char* game_id);
-const char* ps1_cardman_get_gametext(void);
+const char* ps1_cardman_get_gameid(void);
+const char* ps1_cardman_get_gamename(void);

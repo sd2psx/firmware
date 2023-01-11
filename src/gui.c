@@ -12,6 +12,7 @@
 #include "settings.h"
 
 #include "ps1/ps1_cardman.h"
+#include "ps1/ps1_odeman.h"
 #include "ps1/ps1_memory_card.h"
 
 #include "ps2/ps2_memory_card.h"
@@ -26,7 +27,7 @@ static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text, *g_activity_frame;
 
 static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
-static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *lbl_civ_err;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *src_main_title_lbl, *lbl_civ_err;
 
 static int have_oled;
 static int switching_card;
@@ -365,12 +366,12 @@ static void create_main_screen(void) {
     scr_main_channel_lbl = ui_label_create_at(scr_main, 0, 32, "");
     lv_obj_set_align(scr_main_channel_lbl, LV_ALIGN_TOP_RIGHT);
 
-    // lbl = lv_label_create(scr_main);
-    // lv_obj_set_align(lbl, LV_ALIGN_TOP_LEFT);
-    // lv_obj_set_pos(lbl, 0, 40);
-    // lv_label_set_text(lbl, "Very long game title goes here");
-    // lv_label_set_long_mode(lbl, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    // lv_obj_set_width(lbl, 128);
+    src_main_title_lbl = lv_label_create(scr_main);
+    lv_obj_set_align(src_main_title_lbl, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_pos(src_main_title_lbl, 0, 40);
+    lv_label_set_text(src_main_title_lbl, "");
+    lv_label_set_long_mode(src_main_title_lbl, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_obj_set_width(src_main_title_lbl, 128);
 
     lbl = lv_label_create(scr_main);
     lv_obj_set_align(lbl, LV_ALIGN_BOTTOM_LEFT);
@@ -716,12 +717,22 @@ void gui_task(void) {
             displayed_card_channel = ps1_cardman_get_channel();
             snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
             if (displayed_card_idx == 0) {
-                const char* text = ps1_cardman_get_gametext();
-                lv_label_set_text(scr_main_idx_lbl, text);
+                const char* id = ps1_cardman_get_gameid();
+                const char* name = ps1_cardman_get_gamename();
+                lv_label_set_text(scr_main_idx_lbl, id);
+                if (name[0] != 0x00)
+                {
+                    lv_label_set_text(src_main_title_lbl, name);
+                }
+                else
+                {
+                    lv_label_set_text(src_main_title_lbl, "");
+                }
             }
             else {
                 snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
                 lv_label_set_text(scr_main_idx_lbl, card_idx_s);
+                lv_label_set_text(src_main_title_lbl, "");
             }
             lv_label_set_text(scr_main_channel_lbl, card_channel_s);
         }
