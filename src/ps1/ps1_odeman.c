@@ -2,6 +2,7 @@
 #include "pico/time.h"
 #include "ps1_memory_card.h"
 #include "ps1_cardman.h"
+#include "ps1_odeman.h"
 #include "debug.h"
 
 #include <gui.h>
