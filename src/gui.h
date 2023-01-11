@@ -5,6 +5,7 @@
 
 void gui_init(void);
 void gui_task(void);
+void gui_request_refresh(void);
 void gui_do_ps1_card_switch(void);
 void gui_do_ps2_card_switch(void);
 
