@@ -32,7 +32,7 @@ typedef struct
     char parent_id[MAX_GAME_ID_LENGTH];
 } GameStruct;
 
-extern const char _binary_gameDbPS1_bin_start, _binary_gameDbPS1_bin_size;
+extern const char _binary_gamedbps1_dat_start, _binary_gamedbps1_dat_size;
 
 
 static int card_idx;
@@ -71,7 +71,7 @@ static bool sanityCheckGameId(const char* const game_id) {
     return (i>0);
 }
 
-static uint32_t charArrayToUint32(char in[4]) {
+static uint32_t charArrayToUint32(const char in[4]) {
 #if BIG_ENDIAN
     char inter[4] = {in[3], in[2], in[1], in[0]};
 #else
@@ -80,56 +80,47 @@ static uint32_t charArrayToUint32(char in[4]) {
     return *(uint32_t*)inter;
 }
 
-static uint32_t findPrefixOffset(int file_id, uint32_t numericPrefix) {
+static uint32_t findPrefixOffset(uint32_t numericPrefix) {
     uint32_t offset = 0;
 
-    sd_seek(file_id, 0);
+    const char* pointer = &_binary_gamedbps1_dat_start;
 
-    char entry[8] = {};
     while (offset == 0) {
 
-        if (sd_read(file_id, entry, 8) == 8) {
-            uint32_t currentprefix = charArrayToUint32(entry), currentoffset = charArrayToUint32(&entry[4]);
-            if (currentprefix == numericPrefix) {
-                offset = currentoffset;
-            }
-            if ((currentprefix == 0U) && (currentoffset == 0U)) {
-                break;
-            }
+        uint32_t currentprefix = charArrayToUint32(pointer), currentoffset = charArrayToUint32(&pointer[4]);
+
+        if (currentprefix == numericPrefix) {
+            offset = currentoffset;
         }
-        else
-        {
-            // Should never happen
+        if ((currentprefix == 0U) && (currentoffset == 0U)) {
             break;
         }
+        pointer+= 8;
     }
 
     return offset;
 }
 
-static bool getName(int file_id, uint32_t name_offset, char* const game_name) {
-    char buff[MAX_GAME_NAME_LENGTH] = {};
+static bool getName(uint32_t name_offset, char* const game_name) {
     
-    if (sd_seek(file_id, name_offset) == 0) {
-        if (sd_read(file_id, buff, MAX_GAME_NAME_LENGTH) > 0) {
-            if (buff[0] != 0x00) {
-                strlcpy(game_name, buff, MAX_GAME_NAME_LENGTH);
-                return true;
-            }
-        }
+    if ((name_offset < (size_t)&_binary_gamedbps1_dat_size) && 
+        (&_binary_gamedbps1_dat_start + name_offset) != 0x00) {
+        strlcpy(game_name, 
+                (&_binary_gamedbps1_dat_start + name_offset), 
+                MAX_GAME_NAME_LENGTH);
+        return true;
     }
+
     return false;
 }
 
 static bool getGameData(const char* const id) {
     char prefixString[MAX_PREFIX_LENGTH + 1] = {};
     char idString[10] = {};
-    char entry[12] = {};
+
     uint32_t numericPrefix = 0, prefixOffset = 0, currentId = 0, numericId = 0;
     
-    if (sd_exists("gameDbPS1.dat") && (sanityCheckGameId(id))) {
-        int file_id = sd_open("gameDbPS1.dat", 0x00);
-
+    if (sanityCheckGameId(id)) {
         char* copy = strdup(id);
         char* split = strtok(copy, "-");
         
@@ -149,26 +140,27 @@ static bool getGameData(const char* const id) {
             numericId = atoi(idString);
         }
 
-        prefixOffset = findPrefixOffset(file_id, numericPrefix);
+        prefixOffset = findPrefixOffset(numericPrefix);
 
         debug_printf("Numeric ID %d ID %s\n", numericId, idString);
         debug_printf("NumericPrefix %d Prefix %s: %d\n", numericPrefix, prefixString, prefixOffset);
-        
-        if (sd_seek(file_id, prefixOffset) == 0) {
-            do {
-                sd_read(file_id, entry, 12);
-                currentId = charArrayToUint32(entry);
-                if (currentId == numericId)  {
-                    uint32_t name_offset = charArrayToUint32(&entry[4]);
 
-                    debug_printf("Found ID - Name Offset: %d, Parent ID: %d\n", (int)name_offset, (int)charArrayToUint32(&entry[8]));
+        if (prefixOffset <  (size_t)&_binary_gamedbps1_dat_size) {
+            uint32_t offset = prefixOffset;
+            do {                
+                currentId = charArrayToUint32(&(&_binary_gamedbps1_dat_start)[offset]);
+                if (currentId == numericId)  {
+                    uint32_t name_offset = charArrayToUint32(&(&_binary_gamedbps1_dat_start)[offset+4]);
+
+                    debug_printf("Found ID - Name Offset: %d, Parent ID: %d\n", (int)name_offset, (int)charArrayToUint32(&(&_binary_gamedbps1_dat_start)[offset+8]));
                     
-                    snprintf(card_game_id, MAX_GAME_ID_LENGTH,  "%s-%0*d", prefixString, (int)strlen(idString), (int)charArrayToUint32(&entry[8]));
+                    snprintf(card_game_id, MAX_GAME_ID_LENGTH,  "%s-%0*d", prefixString, (int)strlen(idString), (int)charArrayToUint32(&(&_binary_gamedbps1_dat_start)[offset+8]));
                     
                     debug_printf("Parent ID: %s\n", card_game_id);
 
-                    return getName(file_id, name_offset, card_game_name);
+                    return getName(name_offset, card_game_name);
                 }
+                offset += 12;
             } while (currentId != 0);
         }
     }

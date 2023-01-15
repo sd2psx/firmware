@@ -17,9 +17,9 @@ pico_sdk_init()
 set(LV_CONF_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/lv_conf.h CACHE STRING "" FORCE)
 add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
 
-execute_process(COMMAND ${CMAKE_OBJCOPY} -I binary -O elf32-littlearm --rename-section .data=.rodata,alloc,load,readonly gameDbPS1.dat ${CMAKE_CURRENT_BINARY_DIR}/gameDbPS1.o
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(database)
 
+                
 add_executable(sd2psx
     src/main.c
     src/debug.c
@@ -128,9 +128,10 @@ target_link_libraries(sd2psx
     hardware_flash
     hardware_dma
     lvgl::lvgl
-    ${CMAKE_CURRENT_BINARY_DIR}/gameDbPS1.o
+    gamedb
 )
 
+add_dependencies(sd2psx gamedb)
 set_target_properties(sd2psx PROPERTIES PICO_TARGET_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/memmap_custom.ld)
 
 pico_add_extra_outputs(sd2psx)
