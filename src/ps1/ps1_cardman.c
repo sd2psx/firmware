@@ -34,7 +34,7 @@ static int card_chan;
 static char card_game_id[MAX_GAME_ID_LENGTH];
 static char* card_game_name;
 
-static bool sanityCheckGameId(const char* const game_id) {
+static bool ps1_cardman_sanity_check_game_id(const char* const game_id) {
     uint8_t i = 0U;
 
     char splittable_game_id[MAX_GAME_ID_LENGTH];
@@ -65,7 +65,7 @@ static bool sanityCheckGameId(const char* const game_id) {
     return (i>0);
 }
 
-static uint32_t charArrayToUint32(const char in[4]) {
+static uint32_t ps1_cardman_char_array_to_uint32(const char in[4]) {
 #if BIG_ENDIAN
     char inter[4] = {in[3], in[2], in[1], in[0]};
 #else
@@ -74,14 +74,14 @@ static uint32_t charArrayToUint32(const char in[4]) {
     return *(uint32_t*)inter;
 }
 
-static uint32_t findPrefixOffset(uint32_t numericPrefix) {
+static uint32_t ps1_cardman_find_prefix_offset(uint32_t numericPrefix) {
     uint32_t offset = 0;
 
     const char* pointer = &_binary_gamedbps1_dat_start;
 
     while (offset == 0) {
 
-        uint32_t currentprefix = charArrayToUint32(pointer), currentoffset = charArrayToUint32(&pointer[4]);
+        uint32_t currentprefix = ps1_cardman_char_array_to_uint32(pointer), currentoffset = ps1_cardman_char_array_to_uint32(&pointer[4]);
 
         if (currentprefix == numericPrefix) {
             offset = currentoffset;
@@ -95,7 +95,7 @@ static uint32_t findPrefixOffset(uint32_t numericPrefix) {
     return offset;
 }
 
-static bool getName(uint32_t name_offset, char** game_name) {
+static bool ps1_cardman_get_name(uint32_t name_offset, char** game_name) {
     
     if ((name_offset < (size_t)&_binary_gamedbps1_dat_size) && 
         (&_binary_gamedbps1_dat_start + name_offset) != 0x00) {
@@ -107,13 +107,13 @@ static bool getName(uint32_t name_offset, char** game_name) {
     return false;
 }
 
-static bool getGameData(const char* const id) {
+static bool ps1_cardman_get_game_data(const char* const id) {
     char prefixString[MAX_PREFIX_LENGTH + 1] = {};
     char idString[10] = {};
 
     uint32_t numericPrefix = 0, prefixOffset = 0, currentId = 0, numericId = 0;
     
-    if (sanityCheckGameId(id)) {
+    if (ps1_cardman_sanity_check_game_id(id)) {
         char* copy = strdup(id);
         char* split = strtok(copy, "-");
         
@@ -123,7 +123,7 @@ static bool getGameData(const char* const id) {
             {
                 prefixString[i] = toupper(prefixString[i]);
             }
-            numericPrefix = charArrayToUint32(prefixString);
+            numericPrefix = ps1_cardman_char_array_to_uint32(prefixString);
         }
 
         split = strtok(NULL, "-");
@@ -133,7 +133,7 @@ static bool getGameData(const char* const id) {
             numericId = atoi(idString);
         }
 
-        prefixOffset = findPrefixOffset(numericPrefix);
+        prefixOffset = ps1_cardman_find_prefix_offset(numericPrefix);
 
         debug_printf("Numeric ID %d ID %s\n", numericId, idString);
         debug_printf("NumericPrefix %d Prefix %s: %d\n", numericPrefix, prefixString, prefixOffset);
@@ -141,17 +141,17 @@ static bool getGameData(const char* const id) {
         if (prefixOffset <  (size_t)&_binary_gamedbps1_dat_size) {
             uint32_t offset = prefixOffset;
             do {                
-                currentId = charArrayToUint32(&(&_binary_gamedbps1_dat_start)[offset]);
+                currentId = ps1_cardman_char_array_to_uint32(&(&_binary_gamedbps1_dat_start)[offset]);
                 if (currentId == numericId)  {
-                    uint32_t name_offset = charArrayToUint32(&(&_binary_gamedbps1_dat_start)[offset+4]);
+                    uint32_t name_offset = ps1_cardman_char_array_to_uint32(&(&_binary_gamedbps1_dat_start)[offset+4]);
 
-                    debug_printf("Found ID - Name Offset: %d, Parent ID: %d\n", (int)name_offset, (int)charArrayToUint32(&(&_binary_gamedbps1_dat_start)[offset+8]));
+                    debug_printf("Found ID - Name Offset: %d, Parent ID: %d\n", (int)name_offset, (int)ps1_cardman_char_array_to_uint32(&(&_binary_gamedbps1_dat_start)[offset+8]));
                     
-                    snprintf(card_game_id, MAX_GAME_ID_LENGTH,  "%s-%0*d", prefixString, (int)strlen(idString), (int)charArrayToUint32(&(&_binary_gamedbps1_dat_start)[offset+8]));
+                    snprintf(card_game_id, MAX_GAME_ID_LENGTH,  "%s-%0*d", prefixString, (int)strlen(idString), (int)ps1_cardman_char_array_to_uint32(&(&_binary_gamedbps1_dat_start)[offset+8]));
                     
                     debug_printf("Parent ID: %s\n", card_game_id);
 
-                    return getName(name_offset, &card_game_name);
+                    return ps1_cardman_get_name(name_offset, &card_game_name);
                 }
                 offset += 12;
             } while (currentId != 0);
@@ -320,12 +320,13 @@ int ps1_cardman_get_channel(void) {
 }
 
 void ps1_cardman_set_gameid(const char* game_id) {
-    if (!getGameData(game_id))
+    if (!ps1_cardman_get_game_data(game_id))
     {
         strlcpy(card_game_id, game_id, sizeof(card_game_id));
     }
     card_idx = IDX_GAMEID;
     card_chan = CHAN_MIN;
+    card_game_name = NULL;
 }
 
 const char* ps1_cardman_get_gameid(void) {
