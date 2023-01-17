@@ -26,19 +26,13 @@ static int fd = -1;
 #define MAX_GAME_NAME_LENGTH    (127)
 #define MAX_PREFIX_LENGTH       (4)
 #define MAX_GAME_ID_LENGTH      (16)
-typedef struct
-{
-    char name[MAX_GAME_NAME_LENGTH];
-    char parent_id[MAX_GAME_ID_LENGTH];
-} GameStruct;
 
 extern const char _binary_gamedbps1_dat_start, _binary_gamedbps1_dat_size;
-
 
 static int card_idx;
 static int card_chan;
 static char card_game_id[MAX_GAME_ID_LENGTH];
-static char card_game_name[MAX_GAME_NAME_LENGTH];
+static char* card_game_name;
 
 static bool sanityCheckGameId(const char* const game_id) {
     uint8_t i = 0U;
@@ -101,13 +95,12 @@ static uint32_t findPrefixOffset(uint32_t numericPrefix) {
     return offset;
 }
 
-static bool getName(uint32_t name_offset, char* const game_name) {
+static bool getName(uint32_t name_offset, char** game_name) {
     
     if ((name_offset < (size_t)&_binary_gamedbps1_dat_size) && 
         (&_binary_gamedbps1_dat_start + name_offset) != 0x00) {
-        strlcpy(game_name, 
-                (&_binary_gamedbps1_dat_start + name_offset), 
-                MAX_GAME_NAME_LENGTH);
+        *game_name = (&_binary_gamedbps1_dat_start + name_offset);
+        
         return true;
     }
 
@@ -158,14 +151,14 @@ static bool getGameData(const char* const id) {
                     
                     debug_printf("Parent ID: %s\n", card_game_id);
 
-                    return getName(name_offset, card_game_name);
+                    return getName(name_offset, &card_game_name);
                 }
                 offset += 12;
             } while (currentId != 0);
         }
     }
     else {
-        memset(card_game_name, 0x00, MAX_GAME_NAME_LENGTH);
+       // memset(card_game_name, 0x00, MAX_GAME_NAME_LENGTH);
     }
 
     return false;
