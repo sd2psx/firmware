@@ -157,9 +157,6 @@ static bool ps1_cardman_get_game_data(const char* const id) {
             } while (currentId != 0);
         }
     }
-    else {
-       // memset(card_game_name, 0x00, MAX_GAME_NAME_LENGTH);
-    }
 
     return false;
 }
