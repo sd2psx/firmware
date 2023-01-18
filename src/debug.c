@@ -32,10 +32,6 @@ void __time_critical_func(debug_printf)(const char *format, ...) {
     vsnprintf(buf, sizeof(buf), format, args);
     va_end(args);
 
-#if DEBUG_USB_UART
-    printf("%s", buf);
-#endif
-
     for (char *c = buf; *c; ++c)
         debug_put(*c);
 }
