@@ -137,6 +137,7 @@ static bool ps1_cardman_update_game_data(const char* const id) {
 
                     if ((name_offset < (size_t)&_binary_gamedbps1_dat_size) && (&_binary_gamedbps1_dat_start + name_offset) != 0x00) {
                         card_game_name = (&_binary_gamedbps1_dat_start + name_offset);
+                        debug_printf("Name:%s\n", card_game_name);
 
                         return true;
                     }
@@ -311,9 +312,14 @@ void ps1_cardman_set_gameid(const char* game_id) {
     {
         strlcpy(card_game_id, game_id, sizeof(card_game_id));
         card_game_name = NULL;
+        card_idx = IDX_MIN;
+        card_chan = CHAN_MIN;
     }
-    card_idx = IDX_GAMEID;
-    card_chan = CHAN_MIN;
+    else
+    {
+        card_idx = IDX_GAMEID;
+        card_chan = CHAN_MIN;
+    }
 }
 
 const char* ps1_cardman_get_gameid(void) {
