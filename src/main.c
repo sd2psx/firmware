@@ -44,6 +44,9 @@ static void debug_task(void) {
             if (ch == '\n')
                 uart_putc_raw(UART_PERIPH, '\r');
             uart_putc_raw(UART_PERIPH, ch);
+            #if DEBUG_USB_UART
+                putchar(ch);
+            #endif
         } else {
             break;
         }
