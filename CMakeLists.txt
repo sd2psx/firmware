@@ -126,3 +126,10 @@ target_link_libraries(sd2psx
 set_target_properties(sd2psx PROPERTIES PICO_TARGET_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/memmap_custom.ld)
 
 pico_add_extra_outputs(sd2psx)
+
+set(DEBUG_USB_UART OFF CACHE BOOL "Activate UART over USB for debugging")
+
+if(DEBUG_USB_UART)
+    add_definitions(-DDEBUG_USB_UART)
+    pico_enable_stdio_usb(sd2psx ENABLED)
+endif()
