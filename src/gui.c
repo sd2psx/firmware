@@ -18,15 +18,16 @@
 #include "ps2/ps2_memory_card.h"
 #include "ps2/ps2_cardman.h"
 #include "ps2/ps2_dirty.h"
+#include "ps2/ps2_exploit.h"
 
 #include "ui_theme_mono.h"
 
 /* Displays the line at the bottom for long pressing buttons */
-static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text, *g_activity_frame;
+static lv_obj_t *g_navbar, *g_progress_bar, *g_exploit_bar, *g_progress_text, *g_exploit_text, *g_activity_frame;
 
-static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
+static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_exploit, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
-static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *src_main_title_lbl, *lbl_civ_err;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *src_main_title_lbl, *lbl_civ_err, *lbl_exploit_err;
 
 static int have_oled;
 static int switching_card;
@@ -190,6 +191,23 @@ static void reload_card_cb(int progress) {
     gui_tick();
 }
 
+static void load_exploit_cb(int progress) {
+    static lv_point_t line_points[2] = { {0, DISPLAY_HEIGHT/2}, {0, DISPLAY_HEIGHT/2} };
+    static int prev_progress;
+
+    progress += 5;
+    if (progress/5 == prev_progress/5)
+        return;
+    printf("Current progress %d\n", progress);
+    prev_progress = progress;
+    line_points[1].x = DISPLAY_WIDTH * progress / 100;
+    lv_line_set_points(g_exploit_bar, line_points, 2);
+
+    lv_label_set_text(g_exploit_text, ps2_exploit_get_deploy_text());
+
+    gui_tick();
+}
+
 static void evt_scr_main(lv_event_t *event) {
     if (event->code == LV_EVENT_KEY) {
         uint32_t key = lv_indev_get_key(lv_indev_get_act());
@@ -320,6 +338,26 @@ static void evt_do_civ_deploy(lv_event_t *event) {
     }
 }
 
+static void evt_do_exploit_deploy(lv_event_t *event)
+{
+    (void)event;
+    UI_GOTO_SCREEN(scr_exploit);
+
+    ps2_exploit_set_progress_cb(load_exploit_cb);
+
+    gui_tick();
+
+    int ret = ps2_exploit_deploy();
+    /*if (ret == 0) {
+        lv_label_set_text(lbl_exploit_err, "Success!\n");
+    } else {
+        lv_label_set_text(lbl_exploit_err, ps2_exploit_error(ret));
+    }*/
+    ps2_exploit_set_progress_cb(NULL);
+//    UI_GOTO_SCREEN(scr_main);
+
+}
+
 static void evt_switch_to_ps1(lv_event_t *event) {
     (void)event;
 
@@ -448,6 +486,28 @@ static void create_cardswitch_screen(void) {
     lv_label_set_text(g_progress_text, "Read XXX kB/s");
 }
 
+static void create_exploit_screen(void) {
+    printf("Creating Exploit Screen\n");
+
+    scr_exploit = ui_scr_create();
+
+    ui_header_create(scr_exploit, "Writing Exploit");
+
+    static lv_style_t style_progress;
+    lv_style_init(&style_progress);
+    lv_style_set_line_width(&style_progress, 12);
+    lv_style_set_line_color(&style_progress, lv_palette_main(LV_PALETTE_BLUE));
+
+    g_exploit_bar = lv_line_create(scr_exploit);
+    lv_obj_set_width(g_exploit_bar, DISPLAY_WIDTH);
+    lv_obj_add_style(g_exploit_bar, &style_progress, 0);
+
+    g_exploit_text= lv_label_create(scr_exploit);
+    lv_obj_set_align(g_exploit_text, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_pos(g_exploit_text, 0, DISPLAY_HEIGHT-9);
+    lv_label_set_text(g_exploit_text, "Write XXX kB/s");
+}
+
 static void create_switch_nag_screen(void) {
     scr_switch_nag = ui_scr_create();
 
@@ -545,9 +605,16 @@ static void create_menu_screen(void) {
     {
         /* exploit install */
         lv_obj_t *exploit_install_page = ui_menu_subpage_create(menu, "Install EXPLOIT.bin");
-        {
-            // TODO: handle exploit install
-        }
+        /*{
+            cont = ui_menu_cont_create(exploit_install_page);
+            ui_label_create(cont, "");
+            cont = ui_menu_cont_create(exploit_install_page);
+            lbl_exploit_err = ui_label_create(cont, "");
+
+            cont = ui_menu_cont_create_nav(exploit_install_page);
+            ui_label_create(cont, "Back");
+            lv_obj_add_event_cb(cont, evt_go_back, LV_EVENT_CLICKED, NULL);
+        }*/
 
         /* deploy submenu */
         lv_obj_t *civ_page = ui_menu_subpage_create(menu, "Deploy CIV.bin");
@@ -569,7 +636,9 @@ static void create_menu_screen(void) {
         cont = ui_menu_cont_create_nav(ps2_page);
         ui_label_create_grow_scroll(cont, "Install EXPLOIT.bin");
         ui_label_create(cont, " >");
-        ui_menu_set_load_page_event(menu, cont, exploit_install_page);
+//        ui_menu_set_load_page_event(menu, cont, exploit_install_page);
+        lv_obj_add_event_cb(cont, evt_do_exploit_deploy, LV_EVENT_CLICKED, NULL);
+
 
         cont = ui_menu_cont_create_nav(ps2_page);
         ui_label_create_grow(cont, "Deploy CIV.bin");
@@ -619,6 +688,7 @@ static void create_ui(void) {
     create_main_screen();
     create_menu_screen();
     create_cardswitch_screen();
+    create_exploit_screen();
     create_switch_nag_screen();
     create_freepsxboot_screen();
 
@@ -700,6 +770,7 @@ void gui_do_ps2_card_switch(void) {
 }
 
 void gui_task(void) {
+
     input_update_display(g_navbar);
 
     if (settings_get_mode() == MODE_PS1) {

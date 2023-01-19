@@ -14,6 +14,7 @@
 #include "ps2_psram.h"
 #include "ps2_pio_qspi.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 // #define DEBUG_MC_PROTOCOL
@@ -24,6 +25,7 @@ int byte_count;
 volatile int reset;
 int ignore;
 uint8_t flag;
+bool bootup_done = false;
 
 typedef struct {
     uint32_t offset;
@@ -403,4 +405,5 @@ void ps2_memory_card_enter(void) {
     {}
     mc_enter_request = mc_enter_response = 0;
     memcard_running = 1;
+    bootup_done = true;
 }

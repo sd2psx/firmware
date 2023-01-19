@@ -25,6 +25,7 @@
 #include "ps2/ps2_dirty.h"
 #include "ps2/ps2_cardman.h"
 #include "ps2/ps2_psram.h"
+#include "ps2/ps2_exploit.h"
 
 /* reboot to bootloader if either button is held on startup
    to make the device easier to flash when assembled inside case */
@@ -112,6 +113,7 @@ int main() {
         sd_init();
         ps2_cardman_init();
         ps2_dirty_init();
+        ps2_exploit_init();
         gui_init();
 
         multicore_launch_core1(ps2_memory_card_main);
