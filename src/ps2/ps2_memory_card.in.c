@@ -71,7 +71,7 @@ if (ch == 0x11) {
         ps2_dirty_lockout_renew();
         /* the spinlock will be unlocked by the DMA irq once all data is tx'd */
         ps2_dirty_lock();
-        psram_read_dma(read_sector * 512, &readtmp, 512+4);
+        read_mc(read_sector * 512, &readtmp, 512+4);
         // dma_channel_wait_for_finish_blocking(0);
         // dma_channel_wait_for_finish_blocking(1);
     }
@@ -158,7 +158,7 @@ if (ch == 0x11) {
                 ps2_dirty_lockout_renew();
                 /* the spinlock will be unlocked by the DMA irq once all data is tx'd */
                 ps2_dirty_lock();
-                psram_read_dma(read_sector * 512, &readtmp, 512+4);
+                read_mc(read_sector * 512, &readtmp, 512+4);
                 // TODO: remove this if safe
                 // must make sure the dma completes for first byte before we start reading below
                 dma_channel_wait_for_finish_blocking(PIO_SPI_DMA_RX_CHAN);
@@ -213,7 +213,7 @@ if (ch == 0x11) {
         if (write_sector * 512 + 512 <= CARD_SIZE) {
             ps2_dirty_lockout_renew();
             ps2_dirty_lock();
-            psram_write(write_sector * 512, writetmp, 512);
+            write_mc(write_sector * 512, writetmp, 512);
             ps2_dirty_mark(write_sector);
             ps2_dirty_unlock();
 #ifdef DEBUG_MC_PROTOCOL
@@ -239,7 +239,7 @@ if (ch == 0x11) {
         ps2_dirty_lockout_renew();
         ps2_dirty_lock();
         for (int i = 0; i < ERASE_SECTORS; ++i) {
-            psram_write((erase_sector + i) * 512, readtmp.buf, 512);
+            write_mc((erase_sector + i) * 512, readtmp.buf, 512);
             ps2_dirty_mark(erase_sector + i);
         }
         ps2_dirty_unlock();

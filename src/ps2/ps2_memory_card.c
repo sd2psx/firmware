@@ -1,4 +1,5 @@
 #include "hardware/gpio.h"
+#include "hardware/regs/addressmap.h"
 #include "hardware/timer.h"
 #include "hardware/flash.h"
 #include "hardware/dma.h"
@@ -6,6 +7,7 @@
 
 #include "config.h"
 #include "ps2_mc_spi.pio.h"
+#include "flashmap.h"
 #include "debug.h"
 #include "keystore.h"
 #include "des.h"
@@ -17,6 +19,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+
 // #define DEBUG_MC_PROTOCOL
 
 uint64_t us_startup;
@@ -25,7 +28,7 @@ int byte_count;
 volatile int reset;
 int ignore;
 uint8_t flag;
-bool bootup_done = false;
+bool flash_mode = false;
 
 typedef struct {
     uint32_t offset;
@@ -49,6 +52,29 @@ int is_write, is_dma_read;
 uint32_t readptr, writeptr;
 static volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_enter_response;
 static uint8_t hostkey[9];
+
+static inline void __time_critical_func(read_mc)(uint32_t addr, void *buf, size_t sz) {
+    debug_printf("Read at address %d size %d - ", addr, sz);
+    if (flash_mode) {
+        debug_printf("Flash\n");
+        memcpy(buf, (void*)(XIP_BASE + FLASH_OFF_PS2EXP + addr), sz);
+        ps2_dirty_unlock();
+    } else {
+        debug_printf("PSRAM\n");
+        psram_read_dma(addr, buf, sz);
+    }
+}
+
+static inline void __time_critical_func(write_mc)(uint32_t addr, void *buf, size_t sz) {
+    debug_printf("Wrote at address %d size %d\n", addr, sz);
+
+    if (!flash_mode) {
+        psram_write(addr, buf, sz);
+    } else {
+        ps2_dirty_unlock();
+        debug_printf("Ignore writing to exploit.\n");
+    }
+}
 
 static inline void __time_critical_func(RAM_pio_sm_drain_tx_fifo)(PIO pio, uint sm) {
     uint instr = (pio->sm[sm].shiftctrl & PIO_SM0_SHIFTCTRL_AUTOPULL_BITS) ? pio_encode_out(pio_null, 32) :
@@ -397,7 +423,9 @@ void ps2_memory_card_exit(void) {
 }
 
 void ps2_memory_card_enter(void) {
-    if (memcard_running)
+    if (flash_mode) {
+        ps2_memory_card_exit();
+    } else if (memcard_running)
         return;
 
     mc_enter_request = 1;
@@ -405,5 +433,14 @@ void ps2_memory_card_enter(void) {
     {}
     mc_enter_request = mc_enter_response = 0;
     memcard_running = 1;
-    bootup_done = true;
+    flash_mode = false;
+}
+
+void ps2_memory_card_enter_flash(void) {
+    mc_enter_request = 1;
+    while (!mc_enter_response)
+    {}
+    mc_enter_request = mc_enter_response = 0;
+    memcard_running = 1;
+    flash_mode = true;
 }
