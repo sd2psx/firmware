@@ -54,19 +54,17 @@ static volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_ente
 static uint8_t hostkey[9];
 
 static inline void __time_critical_func(read_mc)(uint32_t addr, void *buf, size_t sz) {
-    debug_printf("Read at address %d size %d - ", addr, sz);
     if (flash_mode) {
-        debug_printf("Flash\n");
-        memcpy(buf, (void*)(XIP_BASE + FLASH_OFF_PS2EXP + addr), sz);
+        // Skip first 4 Bytes in Buffer, as they are the prefix
+        memcpy((buf + 4), (void*)(addr + XIP_BASE + FLASH_OFF_PS2EXP), sz);
         ps2_dirty_unlock();
     } else {
-        debug_printf("PSRAM\n");
         psram_read_dma(addr, buf, sz);
     }
 }
 
 static inline void __time_critical_func(write_mc)(uint32_t addr, void *buf, size_t sz) {
-    debug_printf("Wrote at address %d size %d\n", addr, sz);
+    debug_printf("Write at address %d size %d\n", addr, sz);
 
     if (!flash_mode) {
         psram_write(addr, buf, sz);
