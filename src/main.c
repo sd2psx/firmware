@@ -106,11 +106,11 @@ int main() {
         printf("starting in PS2 mode\n");
 
         keystore_init();
+        ps2_exploit_init();
         psram_init();
         sd_init();
         ps2_cardman_init();
         ps2_dirty_init();
-        ps2_exploit_init();
         gui_init();
 
         multicore_launch_core1(ps2_memory_card_main);

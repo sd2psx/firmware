@@ -26,12 +26,14 @@ static lv_obj_t *g_navbar, *g_progress_bar, *g_exploit_bar, *g_progress_text, *g
 
 static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_exploit, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
-static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *lbl_civ_err, *lbl_exploit_err;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *lbl_civ_err;
 
 static int have_oled;
 static int switching_card;
 static uint64_t switching_card_timeout;
 static int terminated;
+
+static bool installing_exploit;
 
 #define COLOR_FG      lv_color_white()
 #define COLOR_BG      lv_color_black()
@@ -339,20 +341,8 @@ static void evt_do_civ_deploy(lv_event_t *event) {
 static void evt_do_exploit_deploy(lv_event_t *event)
 {
     (void)event;
-    UI_GOTO_SCREEN(scr_exploit);
 
-    ps2_exploit_set_progress_cb(load_exploit_cb);
-
-    gui_tick();
-
-    int ret = ps2_exploit_deploy();
-    /*if (ret == 0) {
-        lv_label_set_text(lbl_exploit_err, "Success!\n");
-    } else {
-        lv_label_set_text(lbl_exploit_err, ps2_exploit_error(ret));
-    }*/
-    ps2_exploit_set_progress_cb(NULL);
-//    UI_GOTO_SCREEN(scr_main);
+    installing_exploit = true;
 
 }
 
@@ -372,6 +362,25 @@ static void evt_switch_to_ps2(lv_event_t *event) {
 
     UI_GOTO_SCREEN(scr_switch_nag);
     terminated = 1;
+}
+
+static void gui_install_exploit()
+{
+    UI_GOTO_SCREEN(scr_exploit);
+
+    ps2_exploit_set_progress_cb(load_exploit_cb);
+
+    gui_tick();
+
+    //int ret = 
+    (void)ps2_exploit_deploy();
+    /*if (ret == 0) {
+        lv_label_set_text(lbl_exploit_err, "Success!\n");
+    } else {
+        lv_label_set_text(lbl_exploit_err, ps2_exploit_error(ret));
+    }*/
+    ps2_exploit_set_progress_cb(NULL);
+    UI_GOTO_SCREEN(scr_main);
 }
 
 static void create_main_screen(void) {
@@ -602,7 +611,7 @@ static void create_menu_screen(void) {
     lv_obj_t *ps2_page = ui_menu_subpage_create(menu, "PS2 Settings");
     {
         /* exploit install */
-        lv_obj_t *exploit_install_page = ui_menu_subpage_create(menu, "Install EXPLOIT.bin");
+        //lv_obj_t *exploit_install_page = ui_menu_subpage_create(menu, "Install EXPLOIT.bin");
         /*{
             cont = ui_menu_cont_create(exploit_install_page);
             ui_label_create(cont, "");
@@ -732,6 +741,8 @@ void gui_init(void) {
     lv_disp_set_theme(disp, th);
 
     create_ui();
+
+    installing_exploit = false;
 }
 
 void gui_do_ps1_card_switch(void) {
@@ -760,6 +771,7 @@ void gui_do_ps2_card_switch(void) {
 
     input_flush();
 }
+
 
 void gui_task(void) {
 
@@ -801,6 +813,13 @@ void gui_task(void) {
             switching_card = 0;
             gui_do_ps2_card_switch();
         }
+
+        if (installing_exploit && !input_is_any_down())
+        {
+            installing_exploit = false;
+            gui_install_exploit();
+        }
+
 
         if (ps2_dirty_activity) {
             input_flush();
