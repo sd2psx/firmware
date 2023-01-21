@@ -1,7 +1,9 @@
 #include "ps1_cardman.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "sd.h"
 #include "debug.h"
@@ -17,11 +19,140 @@ static uint8_t flushbuf[BLOCK_SIZE];
 static int fd = -1;
 
 #define IDX_MIN 1
+#define IDX_GAMEID 0
 #define CHAN_MIN 1
 #define CHAN_MAX 8
 
+#define MAX_GAME_NAME_LENGTH    (127)
+#define MAX_PREFIX_LENGTH       (4)
+#define MAX_GAME_ID_LENGTH      (16)
+
+extern const char _binary_gamedbps1_dat_start, _binary_gamedbps1_dat_size;
+
 static int card_idx;
 static int card_chan;
+static char card_game_id[MAX_GAME_ID_LENGTH];
+static const char* card_game_name;
+
+static bool ps1_cardman_sanity_check_game_id(const char* const game_id) {
+    uint8_t i = 0U;
+
+    char splittable_game_id[MAX_GAME_ID_LENGTH];
+    strlcpy(splittable_game_id, game_id, MAX_GAME_ID_LENGTH);
+    char* prefix = strtok(splittable_game_id, "-");
+    char* id = strtok(NULL, "-");
+
+    while (prefix[i] != 0x00) {
+        if (!isalpha((int)prefix[i])) {
+            return false;
+        }
+        i++;
+    }
+    if (i == 0) {
+        return false;
+    } else {
+        i = 0;
+    }
+
+    while (prefix[i] != 0x00) {
+        if (!isdigit((int)id[i])) {
+            return false;
+        }
+        i++;
+    }
+
+    return (i > 0);
+}
+
+static uint32_t ps1_cardman_char_array_to_uint32(const char in[4]) {
+#if BIG_ENDIAN
+    char inter[4] = {in[3], in[2], in[1], in[0]};
+#else
+    char* inter = in;
+#endif
+    return *(uint32_t*)inter;
+}
+
+static uint32_t ps1_cardman_find_prefix_offset(uint32_t numericPrefix) {
+    uint32_t offset = 0;
+
+    const char* pointer = &_binary_gamedbps1_dat_start;
+
+    while (offset == 0) {
+        uint32_t currentprefix = ps1_cardman_char_array_to_uint32(pointer), currentoffset = ps1_cardman_char_array_to_uint32(&pointer[4]);
+
+        if (currentprefix == numericPrefix) {
+            offset = currentoffset;
+        }
+        if ((currentprefix == 0U) && (currentoffset == 0U)) {
+            break;
+        }
+        pointer += 8;
+    }
+
+    return offset;
+}
+
+static bool ps1_cardman_update_game_data(const char* const id) {
+    char prefixString[MAX_PREFIX_LENGTH + 1] = {};
+    char idString[10] = {};
+
+    uint32_t numericPrefix = 0, prefixOffset = 0, currentId = 0, numericId = 0;
+
+    if (ps1_cardman_sanity_check_game_id(id)) {
+        char* copy = strdup(id);
+        char* split = strtok(copy, "-");
+
+        if (strlen(split) > 0) {
+            strlcpy(prefixString, split, MAX_PREFIX_LENGTH + 1);
+            for (uint8_t i = 0; i < MAX_PREFIX_LENGTH; i++) {
+                prefixString[i] = toupper((unsigned char)prefixString[i]);
+            }
+            numericPrefix = ps1_cardman_char_array_to_uint32(prefixString);
+        }
+
+        split = strtok(NULL, "-");
+
+        if (strlen(split) > 0) {
+            strlcpy(idString, split, 11);
+            numericId = atoi(idString);
+        }
+
+        prefixOffset = ps1_cardman_find_prefix_offset(numericPrefix);
+
+        if (prefixOffset < (size_t)&_binary_gamedbps1_dat_size) {
+            uint32_t offset = prefixOffset;
+            do {
+                currentId = ps1_cardman_char_array_to_uint32(&(&_binary_gamedbps1_dat_start)[offset]);
+                if (currentId == numericId) {
+                    uint32_t name_offset = ps1_cardman_char_array_to_uint32(&(&_binary_gamedbps1_dat_start)[offset + 4]);
+
+                    debug_printf("Found ID - Name Offset: %d, Parent ID: %d\n", (int)name_offset,
+                                 (int)ps1_cardman_char_array_to_uint32(&(&_binary_gamedbps1_dat_start)[offset + 8]));
+
+                    snprintf(card_game_id, MAX_GAME_ID_LENGTH, "%s-%0*d", prefixString, (int)strlen(idString),
+                             (int)ps1_cardman_char_array_to_uint32(&(&_binary_gamedbps1_dat_start)[offset + 8]));
+
+                    debug_printf("Parent ID: %s\n", card_game_id);
+
+                    if ((name_offset < (size_t)&_binary_gamedbps1_dat_size) && (&_binary_gamedbps1_dat_start + name_offset) != 0x00) {
+                        card_game_name = (&_binary_gamedbps1_dat_start + name_offset);
+                        debug_printf("Name:%s\n", card_game_name);
+
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                offset += 12;
+            } while (currentId != 0);
+        }
+    }
+
+    return false;
+}
 
 void ps1_cardman_init(void) {
     card_idx = settings_get_ps1_card();
@@ -30,6 +161,7 @@ void ps1_cardman_init(void) {
     card_chan = settings_get_ps1_channel();
     if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
         card_chan = CHAN_MIN;
+    memset(card_game_id, 0, sizeof(card_game_id));
 }
 
 int ps1_cardman_write_sector(int sector, void *buf512) {
@@ -52,7 +184,11 @@ void ps1_cardman_flush(void) {
 
 static void ensuredirs(void) {
     char cardpath[32];
-    snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/Card%d", card_idx);
+    if ((card_game_id[0] != 0x00) && (card_idx < IDX_MIN) ) {
+        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/%s", card_game_id);
+    } else {
+        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/Card%d", card_idx);
+    }
 
     sd_mkdir("MemoryCards");
     sd_mkdir("MemoryCards/PS1");
@@ -73,14 +209,17 @@ void ps1_cardman_open(void) {
     char path[64];
 
     ensuredirs();
-    snprintf(path, sizeof(path), "MemoryCards/PS1/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
+    if ((card_game_id[0] != 0x00) && (card_idx < IDX_MIN)) {
+        snprintf(path, sizeof(path), "MemoryCards/PS1/%s/%s-%d.mcd", card_game_id, card_game_id, card_chan);
+    } else {
+        snprintf(path, sizeof(path), "MemoryCards/PS1/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
+        /* this is ok to do on every boot because it wouldn't update if the value is the same as currently stored */
+        settings_set_ps1_card(card_idx);
+        settings_set_ps1_channel(card_chan);
+    }
 
     printf("Switching to card path = %s\n", path);
-
-    /* this is ok to do on every boot because it wouldn't update if the value is the same as currently stored */
-    settings_set_ps1_card(card_idx);
-    settings_set_ps1_channel(card_chan);
-
+    
     if (!sd_exists(path)) {
         fd = sd_open(path, O_RDWR | O_CREAT | O_TRUNC);
 
@@ -153,8 +292,11 @@ void ps1_cardman_next_idx(void) {
 void ps1_cardman_prev_idx(void) {
     card_idx -= 1;
     card_chan = CHAN_MIN;
-    if (card_idx < IDX_MIN)
+    if ((card_idx == IDX_GAMEID) 
+        && (card_game_id[0] == 0x00))
         card_idx = IDX_MIN;
+    else if (card_idx < IDX_GAMEID)
+        card_idx = IDX_GAMEID;
 }
 
 int ps1_cardman_get_idx(void) {
@@ -163,4 +305,27 @@ int ps1_cardman_get_idx(void) {
 
 int ps1_cardman_get_channel(void) {
     return card_chan;
+}
+
+void ps1_cardman_set_gameid(const char* game_id) {
+    if (!ps1_cardman_update_game_data(game_id))
+    {
+        strlcpy(card_game_id, game_id, sizeof(card_game_id));
+        card_game_name = NULL;
+        card_idx = IDX_MIN;
+        card_chan = CHAN_MIN;
+    }
+    else
+    {
+        card_idx = IDX_GAMEID;
+        card_chan = CHAN_MIN;
+    }
+}
+
+const char* ps1_cardman_get_gameid(void) {
+    return card_game_id;
+}
+
+const char* ps1_cardman_get_gamename(void) {
+    return card_game_name;
 }

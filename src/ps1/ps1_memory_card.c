@@ -1,12 +1,15 @@
 #include "hardware/gpio.h"
 #include "hardware/timer.h"
 #include "pico/platform.h"
+#include "string.h"
 
 #include "config.h"
 #include "ps1_mc_spi.pio.h"
 #include "debug.h"
 #include "bigmem.h"
 #include "ps1_dirty.h"
+#include <ps1/ps1_memory_card.h>
+#include <stdint.h>
 
 #define card_image bigmem.ps1.card_image
 
@@ -17,6 +20,11 @@ static volatile int reset;
 static int ignore;
 static uint8_t flag;
 
+static size_t game_id_length;
+static char received_game_id[0x10];
+static volatile uint8_t mc_pro_command;
+
+
 typedef struct {
     uint32_t offset;
     uint32_t sm;
@@ -24,6 +32,28 @@ typedef struct {
 
 static pio_t cmd_reader, dat_writer;
 static volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_enter_response;
+
+
+static void __time_critical_func(clean_title_id)(const uint8_t* const in_title_id, char* const out_title_id, const size_t in_title_id_length, const size_t out_buffer_size) {
+    uint16_t idx_in_title = 0, idx_out_title = 0;
+
+    while ( (in_title_id[idx_in_title] != 0x00) 
+            && (idx_in_title < in_title_id_length)
+            && (idx_out_title < out_buffer_size) ) {
+        if ((in_title_id[idx_in_title] == ';') || (in_title_id[idx_in_title] == 0x00)) {
+            out_title_id[idx_out_title++] = 0x00;
+            break;
+        } else if ((in_title_id[idx_in_title] == '\\') || (in_title_id[idx_in_title] == '/')) {
+            idx_out_title = 0;
+        } else if (in_title_id[idx_in_title] == '_') {
+            out_title_id[idx_out_title++] = '-';
+        } else if (in_title_id[idx_in_title] != '.') {
+            out_title_id[idx_out_title++] = in_title_id[idx_in_title];
+        } else {
+        }
+        idx_in_title++;
+    }
+}
 
 static void __time_critical_func(reset_pio)(void) {
     // debug_printf("!!\n");
@@ -148,11 +178,65 @@ static int __time_critical_func(mc_do_state)(uint8_t ch) {
                     ps1_dirty_mark(MSB * 256 + LSB);
                     return 0x47;
                 }
-            }
+            } 
 
             #undef MSB
             #undef LSB
             #undef OFF
+        }
+        // Memcard Pro Commands after this line
+        // See https://gitlab.com/chriz2600/ps1-game-id-transmission
+        else if (cmd == 0x20) {   // MCP Ping Command
+            switch (byte_count) {
+                case 2:
+                case 3: return 0x00;
+                case 4: return 0x27;
+                case 5: return 0xFF; 
+            }
+        } else if (cmd == 0x21) { // MCP Game ID
+            if (byte_count == game_id_length + 4)
+            {
+                clean_title_id(&payload[4], received_game_id, game_id_length, sizeof(received_game_id));
+                mc_pro_command = MCP_GAME_ID;
+            }
+            switch (byte_count) {
+                case 2: memset(received_game_id, 0, sizeof(received_game_id)); return 0x00;
+                case 3: return 0x00;
+                case 4: game_id_length = payload[byte_count - 1]; return 0x00;
+                case 5 ... 255: return payload[byte_count - 1];
+            }
+        } else if (cmd == 0x22) { // MCP Prv Channel
+            switch (byte_count) {
+                case 2: 
+                case 3: return 0x00;
+                case 4: return 0x20;
+                case 5: mc_pro_command = MCP_PRV_CH; return 0xFF; 
+            }
+        } else if (cmd == 0x23) { // MCP Nxt Channel
+            switch (byte_count) {
+                case 2: 
+                case 3: return 0x00;
+                case 4: return 0x20;
+                case 5: mc_pro_command = MCP_NXT_CH; return 0xFF; 
+            }
+        } else if (cmd == 0x24) { // MCP Prv Card
+            
+            switch (byte_count) {
+                case 2: 
+                case 3: return 0x00;
+                case 4: return 0x20;
+                case 5: mc_pro_command = MCP_PRV_CARD; return 0xFF; 
+            }
+        } else if (cmd == 0x25) { // MCP Nxt Card
+            
+            switch (byte_count) {
+                case 2:
+                case 3: return 0x00;
+                case 4: return 0x20;
+                case 5: mc_pro_command = MCP_NXT_CARD; return 0xFF; 
+            }
+        } else {
+            debug_printf("Received unknown command: %u", ch);
         }
     }
 
@@ -284,4 +368,19 @@ void ps1_memory_card_enter(void) {
     {}
     mc_enter_request = mc_enter_response = 0;
     memcard_running = 1;
+    mc_pro_command = 0;
+    game_id_length = sizeof(received_game_id);
+    memset(received_game_id, 0, sizeof(received_game_id));
+}
+
+void ps1_memory_card_reset_ode_command(void) {
+    mc_pro_command = 0;
+}
+
+uint8_t ps1_memory_card_get_ode_command(void) {
+    return mc_pro_command;
+}
+
+const char* ps1_memory_card_get_game_id(void) {
+    return received_game_id;
 }

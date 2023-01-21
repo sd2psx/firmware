@@ -11,6 +11,7 @@
 #include "input.h"
 #include "config.h"
 #include "debug.h"
+#include "pico/time.h"
 #include "sd.h"
 #include "keystore.h"
 #include "settings.h"
@@ -18,6 +19,7 @@
 #include "ps1/ps1_memory_card.h"
 #include "ps1/ps1_dirty.h"
 #include "ps1/ps1_cardman.h"
+#include "ps1/ps1_odeman.h"
 
 #include "ps2/ps2_memory_card.h"
 #include "ps2/ps2_dirty.h"
@@ -97,6 +99,7 @@ int main() {
 
         while (1) {
             debug_task();
+            ps1_odeman_task();
             ps1_dirty_task();
             gui_task();
             input_task();
