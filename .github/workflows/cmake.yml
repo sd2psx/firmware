@@ -34,6 +34,19 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      
+    - name: Configure CMake for Debug USB
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      run: cmake -B ${{github.workspace}}/build_usb -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDEBUG_USB_UART:BOOL=ON
+
+    - name: Build Debug USB
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build_usb --config ${{env.BUILD_TYPE}}
+      
+    - name: Rename Debug USB uf2
+      run: mv build_usb/sd2psx.uf2 build/sd2psx_usb_debug.uf2
+      
 
     - uses: marvinpinto/action-automatic-releases@v1.2.1
       # uses: marvinpinto/action-automatic-releases@919008cf3f741b179569b7a6fb4d8860689ab7f0
@@ -46,3 +59,4 @@ jobs:
         files: |
           build/*.uf2
 
+ 
