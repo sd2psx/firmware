@@ -43,7 +43,7 @@ static void __time_critical_func(clean_title_id)(const uint8_t* const in_title_i
         if ((in_title_id[idx_in_title] == ';') || (in_title_id[idx_in_title] == 0x00)) {
             out_title_id[idx_out_title++] = 0x00;
             break;
-        } else if ((in_title_id[idx_in_title] == '\\') || (in_title_id[idx_in_title] == '/')) {
+        } else if ((in_title_id[idx_in_title] == '\\') || (in_title_id[idx_in_title] == '/') || (in_title_id[idx_in_title] == ':')) {
             idx_out_title = 0;
         } else if (in_title_id[idx_in_title] == '_') {
             out_title_id[idx_out_title++] = '-';
