@@ -24,6 +24,7 @@ typedef struct {
 } settings_t;
 
 #define SETTINGS_VERSION_MAGIC (0xABCD0002)
+#define SETTINGS_FLAGS_AUTOBOOT (0b1)
 
 _Static_assert(sizeof(settings_t) == 16, "unexpected padding in the settings structure");
 
@@ -120,5 +121,19 @@ void settings_set_mode(int mode) {
         settings.sys_flags &= ~1;
         settings.sys_flags |= mode;
         SETTINGS_UPDATE_FIELD(sys_flags);
+    }
+}
+
+bool settings_get_ps2_autoboot(void) {
+    return (settings.ps2_flags & SETTINGS_FLAGS_AUTOBOOT);
+}
+
+void settings_set_ps2_autoboot(bool autoboot) {
+    if (((settings.ps2_flags & SETTINGS_FLAGS_AUTOBOOT) != 0) != autoboot)     {
+        if (autoboot)
+            settings.ps2_flags |= SETTINGS_FLAGS_AUTOBOOT;
+        else
+            settings.ps2_flags &= ~SETTINGS_FLAGS_AUTOBOOT;
+        SETTINGS_UPDATE_FIELD(ps2_flags);
     }
 }
