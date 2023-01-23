@@ -27,7 +27,7 @@ static lv_obj_t *g_navbar, *g_progress_bar, *g_exploit_bar, *g_progress_text, *g
 
 static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_exploit, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
-static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl,*src_main_title_lbl, *lbl_civ_err, *lbl_exploit_err, *lbl_autoboot;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl,*src_main_title_lbl, *lbl_civ_err, *lbl_autoboot;
 
 static int have_oled;
 static int switching_card;
@@ -755,6 +755,11 @@ void gui_init(void) {
     create_ui();
     refresh_gui = false;
     installing_exploit = false;
+}
+
+void gui_request_refresh(void)
+{
+    refresh_gui = true;
 }
 
 void gui_do_ps1_card_switch(void) {
