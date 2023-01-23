@@ -26,7 +26,7 @@ static lv_obj_t *g_navbar, *g_progress_bar, *g_exploit_bar, *g_progress_text, *g
 
 static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_exploit, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
-static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *lbl_civ_err;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *lbl_civ_err, *lbl_autoboot;
 
 static int have_oled;
 static int switching_card;
@@ -324,6 +324,15 @@ void evt_menu_page(lv_event_t *event) {
 
 static void evt_go_back(lv_event_t *event) {
     ui_menu_go_back(menu);
+    lv_event_stop_bubbling(event);
+}
+
+static void evt_ps2_autoboot(lv_event_t *event) {
+    bool current = settings_get_ps2_autoboot();
+    if (ps2_exploit_is_available()) {
+        settings_set_ps2_autoboot(!current);
+        lv_label_set_text(lbl_autoboot, !current ? "Yes" : "No");
+    }
     lv_event_stop_bubbling(event);
 }
 
@@ -637,8 +646,10 @@ static void create_menu_screen(void) {
         }
 
         cont = ui_menu_cont_create_nav(ps2_page);
-        ui_label_create_grow_scroll(cont, "Autoboot exploit");
-        ui_label_create(cont, " No");
+        ui_label_create_grow_scroll(cont, "Autoboot");
+        lbl_autoboot = ui_label_create(cont, settings_get_ps2_autoboot() ? " Yes" : " No");
+        lv_obj_add_event_cb(cont, evt_ps2_autoboot, LV_EVENT_CLICKED, NULL);
+
 
         cont = ui_menu_cont_create_nav(ps2_page);
         ui_label_create_grow_scroll(cont, "Install EXPLOIT.bin");
@@ -803,7 +814,11 @@ void gui_task(void) {
         if (displayed_card_idx != ps2_cardman_get_idx() || displayed_card_channel != ps2_cardman_get_channel()) {
             displayed_card_idx = ps2_cardman_get_idx();
             displayed_card_channel = ps2_cardman_get_channel();
-            snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
+            if (displayed_card_idx == 0) {
+                snprintf(card_idx_s, sizeof(card_idx_s), "BOOT");
+            } else {
+                snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
+            }
             snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
             lv_label_set_text(scr_main_idx_lbl, card_idx_s);
             lv_label_set_text(scr_main_channel_lbl, card_channel_s);

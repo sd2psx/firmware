@@ -1,5 +1,6 @@
 #include "ps2_cardman.h"
 
+#include <ps2/ps2_exploit.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -17,6 +18,7 @@ static uint8_t flushbuf[BLOCK_SIZE];
 static int fd = -1;
 
 #define IDX_MIN 1
+#define IDX_BOOT 0
 #define CHAN_MIN 1
 #define CHAN_MAX 8
 
@@ -28,12 +30,17 @@ static size_t cardprog_pos;
 static int cardprog_wr;
 
 void ps2_cardman_init(void) {
-    card_idx = settings_get_ps2_card();
-    if (card_idx < IDX_MIN)
-        card_idx = IDX_MIN;
-    card_chan = settings_get_ps2_channel();
-    if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
+    if (settings_get_ps2_autoboot()) {
+        card_idx = IDX_BOOT;
         card_chan = CHAN_MIN;
+    } else {
+        card_idx = settings_get_ps2_card();
+        if (card_idx < IDX_MIN)
+            card_idx = IDX_MIN;
+        card_chan = settings_get_ps2_channel();
+        if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
+            card_chan = CHAN_MIN;
+    }
 }
 
 int ps2_cardman_write_sector(int sector, void *buf512) {
@@ -56,7 +63,10 @@ void ps2_cardman_flush(void) {
 
 static void ensuredirs(void) {
     char cardpath[32];
-    snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/Card%d", card_idx);
+    if (settings_get_ps2_autoboot() && ps2_exploit_is_available())
+        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/BOOT");
+    else 
+        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/Card%d", card_idx);
 
     sd_mkdir("MemoryCards");
     sd_mkdir("MemoryCards/PS2");
@@ -206,13 +216,18 @@ void ps2_cardman_open(void) {
     char path[64];
 
     ensuredirs();
-    snprintf(path, sizeof(path), "MemoryCards/PS2/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
+    if (settings_get_ps2_autoboot() && ps2_exploit_is_available())
+        snprintf(path, sizeof(path), "MemoryCards/PS2/BOOT/Card-%d.mcd", card_chan);
+    else
+    {
+        snprintf(path, sizeof(path), "MemoryCards/PS2/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
+        /* this is ok to do on every boot because it wouldn't update if the value is the same as currently stored */
+        settings_set_ps2_card(card_idx);
+        settings_set_ps2_channel(card_chan);
+    }
 
     printf("Switching to card path = %s\n", path);
 
-    /* this is ok to do on every boot because it wouldn't update if the value is the same as currently stored */
-    settings_set_ps2_card(card_idx);
-    settings_set_ps2_channel(card_chan);
 
     if (!sd_exists(path)) {
         cardprog_wr = 1;

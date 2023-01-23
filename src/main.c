@@ -115,7 +115,8 @@ int main() {
 
         multicore_launch_core1(ps2_memory_card_main);
 
-        ps2_memory_card_enter_flash();
+        if (settings_get_ps2_autoboot() && ps2_exploit_is_available())
+            ps2_memory_card_enter_flash();
 
         printf("Starting memory card... ");
         uint64_t start = time_us_64();
