@@ -27,7 +27,7 @@ static lv_obj_t *g_navbar, *g_progress_bar, *g_exploit_bar, *g_progress_text, *g
 
 static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_exploit, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
-static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl,*src_main_title_lbl, *lbl_civ_err, *lbl_autoboot;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl,*src_main_title_lbl, *lbl_civ_err, *lbl_autoboot, *lbl_autoboot;
 
 static int have_oled;
 static int switching_card;
@@ -382,13 +382,7 @@ static void gui_install_exploit()
 
     gui_tick();
 
-    //int ret = 
     (void)ps2_exploit_deploy();
-    /*if (ret == 0) {
-        lv_label_set_text(lbl_exploit_err, "Success!\n");
-    } else {
-        lv_label_set_text(lbl_exploit_err, ps2_exploit_error(ret));
-    }*/
     ps2_exploit_set_progress_cb(NULL);
     UI_GOTO_SCREEN(scr_main);
 }
@@ -620,19 +614,6 @@ static void create_menu_screen(void) {
     /* ps2 */
     lv_obj_t *ps2_page = ui_menu_subpage_create(menu, "PS2 Settings");
     {
-        /* exploit install */
-        //lv_obj_t *exploit_install_page = ui_menu_subpage_create(menu, "Install EXPLOIT.bin");
-        /*{
-            cont = ui_menu_cont_create(exploit_install_page);
-            ui_label_create(cont, "");
-            cont = ui_menu_cont_create(exploit_install_page);
-            lbl_exploit_err = ui_label_create(cont, "");
-
-            cont = ui_menu_cont_create_nav(exploit_install_page);
-            ui_label_create(cont, "Back");
-            lv_obj_add_event_cb(cont, evt_go_back, LV_EVENT_CLICKED, NULL);
-        }*/
-
         /* deploy submenu */
         lv_obj_t *civ_page = ui_menu_subpage_create(menu, "Deploy CIV.bin");
         {
