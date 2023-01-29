@@ -15,6 +15,8 @@
 #include "ps2_dirty.h"
 #include "ps2_psram.h"
 #include "ps2_pio_qspi.h"
+#include "ps2_cardman.h"
+#include "ps2_exploit.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -56,7 +58,7 @@ static uint8_t hostkey[9];
 static inline void __time_critical_func(read_mc)(uint32_t addr, void *buf, size_t sz) {
     if (flash_mode) {
         // Skip first 4 Bytes in Buffer, as they are the prefix
-        memcpy((buf + 4), (void*)(addr + XIP_BASE + FLASH_OFF_PS2EXP), sz);
+        ps2_exploit_read(addr, buf, sz);
         ps2_dirty_unlock();
     } else {
         psram_read_dma(addr, buf, sz);
