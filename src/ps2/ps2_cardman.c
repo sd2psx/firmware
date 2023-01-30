@@ -24,10 +24,16 @@ static int fd = -1;
 #define CHAN_MIN 1
 #define CHAN_MAX 8
 
+#define MAX_GAME_NAME_LENGTH    (127)
+#define MAX_PREFIX_LENGTH       (4)
+#define MAX_GAME_ID_LENGTH      (16)
+
 static int card_idx;
 static int card_chan;
 static uint32_t card_size;
 static cardman_cb_t cardman_cb;
+static char card_game_id[MAX_GAME_ID_LENGTH];
+static const char* card_game_name;
 static uint64_t cardprog_start;
 static size_t cardprog_pos;
 static int cardprog_wr;
@@ -44,6 +50,7 @@ void ps2_cardman_init(void) {
         if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
             card_chan = CHAN_MIN;
     }
+    memset((void*)card_game_id, 0, MAX_GAME_ID_LENGTH);
 }
 
 int ps2_cardman_write_sector(int sector, void *buf512) {
@@ -352,4 +359,16 @@ char *ps2_cardman_get_progress_text(void) {
 
 uint32_t ps2_cardman_get_card_size(void) {
     return card_size;
+}
+
+void ps2_cardman_set_gameid(const char* game_id) {
+    strlcpy(card_game_id, game_id, MAX_GAME_ID_LENGTH);
+}
+
+const char* ps2_cardman_get_gameid(void) {
+    return card_game_id;
+}
+
+const char* ps2_cardman_get_gamename(void) {
+    return card_game_name;
 }
