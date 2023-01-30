@@ -1,9 +1,9 @@
 set(STAGE1_PS2_BOOT "bootcard.bin")
 set(STAGE1_PS2_BOOT_OBJ "${CMAKE_CURRENT_BINARY_DIR}/bootcard.o")
 
-file(DOWNLOAD "https://github.com/sd2psx/OSDSYS-Launcher/releases/download/latest/first-stage.mcd" SHOW_PROGRESS)
-
-file(RENAME "first-stage.mcd" "${STAGE1_PS2_BOOT}")
+file(DOWNLOAD   "https://github.com/sd2psx/OSDSYS-Launcher/releases/download/0.9/first-stage.mcd"  
+                "${CMAKE_CURRENT_SOURCE_DIR}/${STAGE1_PS2_BOOT}" 
+                SHOW_PROGRESS)
 
 add_custom_command(OUTPUT "${STAGE1_PS2_BOOT_OBJ}"
                     COMMAND ${CMAKE_OBJCOPY} ARGS --input-target=binary --output-target=elf32-littlearm --binary-architecture arm --rename-section .data=.rodata ${STAGE1_PS2_BOOT} ${STAGE1_PS2_BOOT_OBJ}
