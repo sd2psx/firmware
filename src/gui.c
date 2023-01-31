@@ -192,23 +192,6 @@ static void reload_card_cb(int progress) {
     gui_tick();
 }
 
-static void load_exploit_cb(int progress) {
-    static lv_point_t line_points[2] = { {0, DISPLAY_HEIGHT/2}, {0, DISPLAY_HEIGHT/2} };
-    static int prev_progress;
-
-    progress += 5;
-    if (progress/5 == prev_progress/5)
-        return;
-    printf("Current progress %d\n", progress);
-    prev_progress = progress;
-    line_points[1].x = DISPLAY_WIDTH * progress / 100;
-    lv_line_set_points(g_exploit_bar, line_points, 2);
-
-    lv_label_set_text(g_exploit_text, ps2_exploit_get_deploy_text());
-
-    gui_tick();
-}
-
 static void evt_scr_main(lv_event_t *event) {
     if (event->code == LV_EVENT_KEY) {
         uint32_t key = lv_indev_get_key(lv_indev_get_act());
@@ -330,10 +313,8 @@ static void evt_go_back(lv_event_t *event) {
 
 static void evt_ps2_autoboot(lv_event_t *event) {
     bool current = settings_get_ps2_autoboot();
-    if (ps2_exploit_is_available()) {
-        settings_set_ps2_autoboot(!current);
-        lv_label_set_text(lbl_autoboot, !current ? "Yes" : "No");
-    }
+    settings_set_ps2_autoboot(!current);
+    lv_label_set_text(lbl_autoboot, !current ? "Yes" : "No");
     lv_event_stop_bubbling(event);
 }
 
@@ -346,14 +327,6 @@ static void evt_do_civ_deploy(lv_event_t *event) {
     } else {
         lv_label_set_text(lbl_civ_err, keystore_error(ret));
     }
-}
-
-static void evt_do_exploit_deploy(lv_event_t *event)
-{
-    (void)event;
-
-    installing_exploit = true;
-
 }
 
 static void evt_switch_to_ps1(lv_event_t *event) {
@@ -372,19 +345,6 @@ static void evt_switch_to_ps2(lv_event_t *event) {
 
     UI_GOTO_SCREEN(scr_switch_nag);
     terminated = 1;
-}
-
-static void gui_install_exploit()
-{
-    UI_GOTO_SCREEN(scr_exploit);
-
-    ps2_exploit_set_progress_cb(load_exploit_cb);
-
-    gui_tick();
-
-    (void)ps2_exploit_deploy();
-    ps2_exploit_set_progress_cb(NULL);
-    UI_GOTO_SCREEN(scr_main);
 }
 
 static void create_main_screen(void) {
@@ -832,13 +792,6 @@ void gui_task(void) {
             switching_card = 0;
             gui_do_ps2_card_switch();
         }
-
-        if (installing_exploit && !input_is_any_down())
-        {
-            installing_exploit = false;
-            gui_install_exploit();
-        }
-
 
         if (ps2_dirty_activity) {
             input_flush();
