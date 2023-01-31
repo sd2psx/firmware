@@ -66,7 +66,7 @@ void ps2_cardman_flush(void) {
 
 static void ensuredirs(void) {
     char cardpath[32];
-    if (settings_get_ps2_autoboot() && ps2_exploit_is_available())
+    if (IDX_BOOT == card_idx)
         snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/BOOT");
     else 
         snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/Card%d", card_idx);
@@ -219,7 +219,7 @@ void ps2_cardman_open(void) {
     char path[64];
 
     ensuredirs();
-    if (settings_get_ps2_autoboot() && ps2_exploit_is_available())
+    if (IDX_BOOT == card_idx)
         snprintf(path, sizeof(path), "MemoryCards/PS2/BOOT/Card-%d.mcd", card_chan);
     else
     {
