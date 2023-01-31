@@ -323,10 +323,11 @@ void ps2_cardman_next_idx(void) {
 }
 
 void ps2_cardman_prev_idx(void) {
+    int minIndex = (settings_get_ps2_autoboot() ? IDX_BOOT : IDX_MIN);
     card_idx -= 1;
     card_chan = CHAN_MIN;
-    if (card_idx < IDX_MIN)
-        card_idx = IDX_MIN;
+    if (card_idx < minIndex)
+        card_idx = minIndex;
 }
 
 int ps2_cardman_get_idx(void) {
