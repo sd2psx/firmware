@@ -19,6 +19,7 @@ add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
 
 add_subdirectory(database)
 add_subdirectory(ps2boot)
+add_subdirectory(src/game_names)
 
                 
 add_executable(sd2psx
@@ -132,6 +133,7 @@ target_link_libraries(sd2psx
     hardware_dma
     lvgl::lvgl
     gamedb
+    game_names
     ps2boot
 )
 
