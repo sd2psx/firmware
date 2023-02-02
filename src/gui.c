@@ -699,9 +699,7 @@ void gui_do_ps2_card_switch(void) {
     input_flush();
 }
 
-
 void gui_task(void) {
-
     input_update_display(g_navbar);
 
     if (settings_get_mode() == MODE_PS1) {
