@@ -371,5 +371,8 @@ const char* ps2_cardman_get_gameid(void) {
 }
 
 const char* ps2_cardman_get_gamename(void) {
+    if (!*card_game_name) {
+        
+    }
     return card_game_name;
 }
