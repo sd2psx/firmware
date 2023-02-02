@@ -457,28 +457,6 @@ static void create_cardswitch_screen(void) {
     lv_label_set_text(g_progress_text, "Read XXX kB/s");
 }
 
-static void create_exploit_screen(void) {
-    printf("Creating Exploit Screen\n");
-
-    scr_exploit = ui_scr_create();
-
-    ui_header_create(scr_exploit, "Writing Exploit");
-
-    static lv_style_t style_progress;
-    lv_style_init(&style_progress);
-    lv_style_set_line_width(&style_progress, 12);
-    lv_style_set_line_color(&style_progress, lv_palette_main(LV_PALETTE_BLUE));
-
-    g_exploit_bar = lv_line_create(scr_exploit);
-    lv_obj_set_width(g_exploit_bar, DISPLAY_WIDTH);
-    lv_obj_add_style(g_exploit_bar, &style_progress, 0);
-
-    g_exploit_text= lv_label_create(scr_exploit);
-    lv_obj_set_align(g_exploit_text, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(g_exploit_text, 0, DISPLAY_HEIGHT-9);
-    lv_label_set_text(g_exploit_text, "Write XXX kB/s");
-}
-
 static void create_switch_nag_screen(void) {
     scr_switch_nag = ui_scr_create();
 
@@ -647,7 +625,6 @@ static void create_ui(void) {
     create_main_screen();
     create_menu_screen();
     create_cardswitch_screen();
-    create_exploit_screen();
     create_switch_nag_screen();
     create_freepsxboot_screen();
 
