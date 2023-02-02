@@ -570,13 +570,6 @@ static void create_menu_screen(void) {
         lbl_autoboot = ui_label_create(cont, settings_get_ps2_autoboot() ? " Yes" : " No");
         lv_obj_add_event_cb(cont, evt_ps2_autoboot, LV_EVENT_CLICKED, NULL);
 
-/*
-        cont = ui_menu_cont_create_nav(ps2_page);
-        ui_label_create_grow_scroll(cont, "Install EXPLOIT.bin");
-        ui_label_create(cont, " >");
-        lv_obj_add_event_cb(cont, evt_do_exploit_deploy, LV_EVENT_CLICKED, NULL);
-*/
-
         cont = ui_menu_cont_create_nav(ps2_page);
         ui_label_create_grow(cont, "Deploy CIV.bin");
         ui_label_create(cont, ">");
