@@ -23,11 +23,11 @@
 #include "ui_theme_mono.h"
 
 /* Displays the line at the bottom for long pressing buttons */
-static lv_obj_t *g_navbar, *g_progress_bar, *g_exploit_bar, *g_progress_text, *g_exploit_text, *g_activity_frame;
+static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text, *g_activity_frame;
 
-static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_exploit, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
+static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
-static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl,*src_main_title_lbl, *lbl_civ_err, *lbl_autoboot, *lbl_autoboot;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl,*src_main_title_lbl, *lbl_civ_err, *lbl_autoboot, *lbl_channel;
 
 static int have_oled;
 static int switching_card;
@@ -209,10 +209,11 @@ static void evt_scr_main(lv_event_t *event) {
         // TODO: if there was a card op recently (1s timeout?), should refuse to switch
         // TODO: ps1 support here
         if (key == INPUT_KEY_PREV || key == INPUT_KEY_NEXT || key == INPUT_KEY_BACK || key == INPUT_KEY_ENTER) {
+            uint8_t prevChannel, prevIdx;
             if (settings_get_mode() == MODE_PS1) {
-                ps1_memory_card_exit();
-                ps1_cardman_close();
-
+                prevChannel = ps1_cardman_get_channel();
+                prevIdx = ps1_cardman_get_idx();
+                
                 switch (key) {
                 case INPUT_KEY_PREV:
                     ps1_cardman_prev_channel();
@@ -227,11 +228,15 @@ static void evt_scr_main(lv_event_t *event) {
                     ps1_cardman_next_idx();
                     break;
                 }
-
-                printf("new PS1 card=%d chan=%d\n", ps1_cardman_get_idx(), ps1_cardman_get_channel());
+                if ((prevChannel != ps1_cardman_get_channel()) || (prevIdx != ps1_cardman_get_idx())) {
+                    ps1_memory_card_exit();
+                    ps1_cardman_close();
+                    switching_card = 1;
+                    printf("new PS1 card=%d chan=%d\n", ps1_cardman_get_idx(), ps1_cardman_get_channel());
+                }
             } else {
-                ps2_memory_card_exit();
-                ps2_cardman_close();
+                prevChannel = ps2_cardman_get_channel();
+                prevIdx = ps2_cardman_get_idx();
 
                 switch (key) {
                 case INPUT_KEY_PREV:
@@ -248,10 +253,17 @@ static void evt_scr_main(lv_event_t *event) {
                     break;
                 }
 
-                printf("new PS2 card=%d chan=%d\n", ps2_cardman_get_idx(), ps2_cardman_get_channel());
+                if ((prevChannel != ps2_cardman_get_channel()) || (prevIdx != ps2_cardman_get_idx())) {
+                    ps2_memory_card_exit();
+                    ps2_cardman_close();
+                    switching_card = 1;
+                    printf("new PS2 card=%d chan=%d\n", ps2_cardman_get_idx(), ps2_cardman_get_channel());
+                }
             }
-            switching_card = 1;
-            switching_card_timeout = time_us_64() + 1500 * 1000;
+
+            if (switching_card == 1) {
+                switching_card_timeout = time_us_64() + 1500 * 1000;
+            }
         }
 
     }
@@ -369,7 +381,7 @@ static void create_main_screen(void) {
     scr_main_idx_lbl = ui_label_create_at(scr_main, 0, 24, "");
     lv_obj_set_align(scr_main_idx_lbl, LV_ALIGN_TOP_RIGHT);
 
-    ui_label_create_at(scr_main, 0, 32, "Channel");
+    lbl_channel = ui_label_create_at(scr_main, 0, 32, "Channel");
 
     scr_main_channel_lbl = ui_label_create_at(scr_main, 0, 32, "");
     lv_obj_set_align(scr_main_channel_lbl, LV_ALIGN_TOP_RIGHT);
@@ -748,10 +760,14 @@ void gui_task(void) {
             displayed_card_channel = ps2_cardman_get_channel();
             if (displayed_card_idx == 0) {
                 snprintf(card_idx_s, sizeof(card_idx_s), "BOOT");
+                snprintf(card_channel_s, sizeof(card_channel_s), " ");
+                lv_label_set_text(lbl_channel, "");
+
             } else {
                 snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
+                snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
+                lv_label_set_text(lbl_channel, "Channel");
             }
-            snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
             lv_label_set_text(scr_main_idx_lbl, card_idx_s);
             lv_label_set_text(scr_main_channel_lbl, card_channel_s);
         }
