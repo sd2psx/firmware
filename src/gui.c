@@ -1,5 +1,6 @@
 #include "gui.h"
 
+#include <game_names/game_names.h>
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -739,29 +740,35 @@ void gui_task(void) {
         static int displayed_card_channel = -1;
         static char card_idx_s[8];
         static char card_channel_s[8];
+        char card_name[127];
+        const char* folder_name = NULL;
 
         if (displayed_card_idx != ps1_cardman_get_idx() || displayed_card_channel != ps1_cardman_get_channel() || refresh_gui) {
             displayed_card_idx = ps1_cardman_get_idx();
             displayed_card_channel = ps1_cardman_get_channel();
+            folder_name = ps1_cardman_get_folder_name();
+            
             snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
-            if (displayed_card_idx == 0) {
-                const char* id = ps1_cardman_get_gameid();
-                const char* name = ps1_cardman_get_gamename();
-                lv_label_set_text(scr_main_idx_lbl, id);
-                if (name[0] != 0x00)
-                {
-                    lv_label_set_text(src_main_title_lbl, name);
-                }
-                else
-                {
-                    lv_label_set_text(src_main_title_lbl, "");
-                }
-            }
-            else {
+
+            if (displayed_card_idx > 0) {
                 snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
                 lv_label_set_text(scr_main_idx_lbl, card_idx_s);
+            } else {
+                lv_label_set_text(scr_main_idx_lbl, folder_name);
+            }
+
+            memset(card_name, 0, sizeof(card_name));
+            game_names_get_name_by_folder(folder_name, card_name);
+
+            if (card_name[0])
+            {
+                lv_label_set_text(src_main_title_lbl, card_name);
+            }
+            else
+            {
                 lv_label_set_text(src_main_title_lbl, "");
             }
+
             lv_label_set_text(scr_main_channel_lbl, card_channel_s);
         }
 
