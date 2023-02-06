@@ -1,5 +1,0 @@
-add_library(game_names STATIC
-            ${CMAKE_CURRENT_SOURCE_DIR}/game_names.c)
-
-target_include_directories(game_names PUBLIC
-            ${CMAKE_CURRENT_SOURCE_DIR})
