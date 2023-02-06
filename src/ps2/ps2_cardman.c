@@ -220,7 +220,7 @@ void ps2_cardman_open(void) {
 
     ensuredirs();
     if (IDX_BOOT == card_idx)
-        snprintf(path, sizeof(path), "MemoryCards/PS2/BOOT/Card-%d.mcd", card_chan);
+        snprintf(path, sizeof(path), "MemoryCards/PS2/BOOT/BootCard.mcd");
     else
     {
         snprintf(path, sizeof(path), "MemoryCards/PS2/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
@@ -306,28 +306,42 @@ void ps2_cardman_close(void) {
 }
 
 void ps2_cardman_next_channel(void) {
-    card_chan += 1;
-    if (card_chan > CHAN_MAX)
-        card_chan = CHAN_MIN;
+    if (card_idx != IDX_BOOT) {
+        card_chan += 1;
+        if (card_chan > CHAN_MAX)
+            card_chan = CHAN_MIN;
+    }
 }
 
 void ps2_cardman_prev_channel(void) {
-    card_chan -= 1;
-    if (card_chan < CHAN_MIN)
-        card_chan = CHAN_MAX;
+    if (card_idx != IDX_BOOT) {
+        card_chan -= 1;
+        if (card_chan < CHAN_MIN)
+            card_chan = CHAN_MAX;
+    }
 }
 
 void ps2_cardman_next_idx(void) {
-    card_idx += 1;
-    card_chan = CHAN_MIN;
+    if (card_idx != IDX_BOOT) {
+        card_idx += 1;
+        card_chan = CHAN_MIN;
+    } else {
+        card_idx = settings_get_ps2_card();
+        card_chan = settings_get_ps2_channel();
+    }
 }
 
 void ps2_cardman_prev_idx(void) {
-    int minIndex = (settings_get_ps2_autoboot() ? IDX_BOOT : IDX_MIN);
-    card_idx -= 1;
-    card_chan = CHAN_MIN;
-    if (card_idx < minIndex)
-        card_idx = minIndex;
+    if (card_idx != IDX_BOOT) {
+        int minIndex = (settings_get_ps2_autoboot() ? IDX_BOOT : IDX_MIN);
+        card_idx -= 1;
+        card_chan = CHAN_MIN;
+        if (card_idx < minIndex)
+            card_idx = minIndex;
+    } else {
+        card_idx = settings_get_ps2_card();
+        card_chan = settings_get_ps2_channel();
+    }
 }
 
 int ps2_cardman_get_idx(void) {
