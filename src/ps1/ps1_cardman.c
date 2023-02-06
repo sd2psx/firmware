@@ -1,6 +1,7 @@
 #include "ps1_cardman.h"
 
 #include <ctype.h>
+#include <ps1/ps1_memory_card.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -11,7 +12,7 @@
 #include "bigmem.h"
 #include "ps1_empty_card.h"
 
-#include "game_names.h"
+#include "game_names/game_names.h"
 
 #include "hardware/timer.h"
 
@@ -29,8 +30,7 @@ static int fd = -1;
 
 static int card_idx;
 static int card_chan;
-static char card_game_id[MAX_GAME_ID_LENGTH];
-static const char* card_game_name;
+static char folder_name[MAX_GAME_ID_LENGTH];
 
 void ps1_cardman_init(void) {
     card_idx = settings_get_ps1_card();
@@ -39,7 +39,8 @@ void ps1_cardman_init(void) {
     card_chan = settings_get_ps1_channel();
     if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
         card_chan = CHAN_MIN;
-    memset(card_game_id, 0, sizeof(card_game_id));
+    snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
+
 }
 
 int ps1_cardman_write_sector(int sector, void *buf512) {
@@ -62,12 +63,9 @@ void ps1_cardman_flush(void) {
 
 static void ensuredirs(void) {
     char cardpath[32];
-    if ((card_game_id[0] != 0x00) && (card_idx < IDX_MIN) ) {
-        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/%s", card_game_id);
-    } else {
-        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/Card%d", card_idx);
-    }
-
+    
+    snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS1/%s", folder_name);
+    
     sd_mkdir("MemoryCards");
     sd_mkdir("MemoryCards/PS1");
     sd_mkdir(cardpath);
@@ -85,12 +83,10 @@ static void genblock(size_t pos, void *buf) {
 
 void ps1_cardman_open(void) {
     char path[64];
-
     ensuredirs();
-    if ((card_game_id[0] != 0x00) && (card_idx < IDX_MIN)) {
-        snprintf(path, sizeof(path), "MemoryCards/PS1/%s/%s-%d.mcd", card_game_id, card_game_id, card_chan);
-    } else {
-        snprintf(path, sizeof(path), "MemoryCards/PS1/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
+
+    snprintf(path, sizeof(path), "MemoryCards/PS1/%s/%s-%d.mcd", folder_name, folder_name, card_chan);
+    if (card_idx != IDX_GAMEID) {
         /* this is ok to do on every boot because it wouldn't update if the value is the same as currently stored */
         settings_set_ps1_card(card_idx);
         settings_set_ps1_channel(card_chan);
@@ -165,16 +161,35 @@ void ps1_cardman_prev_channel(void) {
 void ps1_cardman_next_idx(void) {
     card_idx += 1;
     card_chan = CHAN_MIN;
+    snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
+
+    if (card_idx == IDX_GAMEID) {
+        const char* const game_id = ps1_memory_card_get_game_id();
+        if ((game_id != NULL) && (game_id[0]))
+            snprintf(folder_name, sizeof(folder_name), "%s", game_id);
+        else
+            card_idx = 1;
+    }
+
 }
 
 void ps1_cardman_prev_idx(void) {
     card_idx -= 1;
     card_chan = CHAN_MIN;
-    if ((card_idx == IDX_GAMEID) 
-        && (card_game_id[0] == 0x00))
-        card_idx = IDX_MIN;
-    else if (card_idx < IDX_GAMEID)
+    if (card_idx < IDX_GAMEID)
         card_idx = IDX_GAMEID;
+    
+    snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
+
+    if (card_idx == IDX_GAMEID) {
+        char parent_id[MAX_GAME_ID_LENGTH];
+        const char* const game_id = ps1_memory_card_get_game_id();
+        game_names_get_parent(game_id, parent_id);
+        if ((game_id != NULL) && (game_id[0]))
+            snprintf(folder_name, sizeof(folder_name), "%s", parent_id);
+        else
+            card_idx = IDX_MIN;
+    }
 }
 
 int ps1_cardman_get_idx(void) {
@@ -185,26 +200,16 @@ int ps1_cardman_get_channel(void) {
     return card_chan;
 }
 
-void ps1_cardman_set_gameid(const char* game_id) {
-    card_game_name = game_names_get_game_name(game_id);
-    if (!card_game_name)
-    {
-        strlcpy(card_game_id, game_id, sizeof(card_game_id));
-        card_game_name = NULL;
-        card_idx = IDX_MIN;
-        card_chan = CHAN_MIN;
-    }
-    else
-    {
+void ps1_cardman_set_ode_idx(const char* const card_game_id) {
+    if (card_game_id[0]) {
+        char parent_id[MAX_GAME_ID_LENGTH];
+        game_names_get_parent(card_game_id, parent_id);
+        snprintf(folder_name, sizeof(folder_name), "%s", parent_id);
         card_idx = IDX_GAMEID;
         card_chan = CHAN_MIN;
     }
 }
 
-const char* ps1_cardman_get_gameid(void) {
-    return card_game_id;
-}
-
-const char* ps1_cardman_get_gamename(void) {
-    return card_game_name;
+const char* ps1_cardman_get_folder_name(void) {
+    return folder_name;
 }
