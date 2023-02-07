@@ -2,6 +2,7 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+#include <version.h>
 
 #include "config.h"
 #include "lvgl.h"
@@ -611,6 +612,10 @@ static void create_menu_screen(void) {
         ui_label_create_grow(cont, "Display");
         ui_label_create(cont, ">");
         ui_menu_set_load_page_event(menu, cont, display_page);
+
+        cont = ui_menu_cont_create_nav(main_page);
+        ui_label_create_grow_scroll(cont, "Version");
+        ui_label_create(cont, sd2psx_version);
     }
 
     ui_menu_set_page(menu, main_page);
