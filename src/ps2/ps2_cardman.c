@@ -310,6 +310,9 @@ void ps2_cardman_next_channel(void) {
         card_chan += 1;
         if (card_chan > CHAN_MAX)
             card_chan = CHAN_MIN;
+    } else {
+        card_idx = settings_get_ps2_card();
+        card_chan = settings_get_ps2_channel();
     }
 }
 
@@ -318,6 +321,9 @@ void ps2_cardman_prev_channel(void) {
         card_chan -= 1;
         if (card_chan < CHAN_MIN)
             card_chan = CHAN_MAX;
+    } else {
+        card_idx = settings_get_ps2_card();
+        card_chan = settings_get_ps2_channel();
     }
 }
 
