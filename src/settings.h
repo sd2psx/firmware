@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 void settings_init(void);
 
 int settings_get_ps1_card(void);
@@ -19,3 +21,5 @@ enum {
 
 int settings_get_mode(void);
 void settings_set_mode(int mode);
+bool settings_get_ps2_autoboot(void);
+void settings_set_ps2_autoboot(bool autoboot);

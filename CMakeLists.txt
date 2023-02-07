@@ -18,6 +18,7 @@ set(LV_CONF_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/lv_conf.h CACHE STRING "" FORCE
 add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
 
 add_subdirectory(database)
+add_subdirectory(ps2boot)
 
                 
 add_executable(sd2psx
@@ -44,6 +45,7 @@ add_executable(sd2psx
     src/ps2/ps2_cardman.c
     src/ps2/ps2_pio_qspi.c
     src/ps2/ps2_psram.c
+    src/ps2/ps2_exploit.c
 
     src/wear_leveling/wear_leveling.c
     src/wear_leveling/wear_leveling_rp2040_flash.c
@@ -130,9 +132,10 @@ target_link_libraries(sd2psx
     hardware_dma
     lvgl::lvgl
     gamedb
+    ps2boot
 )
 
-add_dependencies(sd2psx gamedb)
+add_dependencies(sd2psx gamedb ps2boot)
 set_target_properties(sd2psx PROPERTIES PICO_TARGET_LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/memmap_custom.ld)
 
 pico_add_extra_outputs(sd2psx)
