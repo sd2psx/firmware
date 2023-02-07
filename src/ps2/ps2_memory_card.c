@@ -57,7 +57,6 @@ static uint8_t hostkey[9];
 
 static inline void __time_critical_func(read_mc)(uint32_t addr, void *buf, size_t sz) {
     if (flash_mode) {
-        // Skip first 4 Bytes in Buffer, as they are the prefix
         ps2_exploit_read(addr, buf, sz);
         ps2_dirty_unlock();
     } else {
@@ -66,13 +65,10 @@ static inline void __time_critical_func(read_mc)(uint32_t addr, void *buf, size_
 }
 
 static inline void __time_critical_func(write_mc)(uint32_t addr, void *buf, size_t sz) {
-    debug_printf("Write at address %d size %d\n", addr, sz);
-
     if (!flash_mode) {
         psram_write(addr, buf, sz);
     } else {
         ps2_dirty_unlock();
-        debug_printf("Ignore writing to exploit.\n");
     }
 }
 

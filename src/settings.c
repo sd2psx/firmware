@@ -129,11 +129,7 @@ bool settings_get_ps2_autoboot(void) {
 }
 
 void settings_set_ps2_autoboot(bool autoboot) {
-    if (((settings.ps2_flags & SETTINGS_FLAGS_AUTOBOOT) != 0) != autoboot)     {
-        if (autoboot)
-            settings.ps2_flags |= SETTINGS_FLAGS_AUTOBOOT;
-        else
-            settings.ps2_flags &= ~SETTINGS_FLAGS_AUTOBOOT;
-        SETTINGS_UPDATE_FIELD(ps2_flags);
-    }
+    if (autoboot != settings_get_ps2_autoboot())
+        settings.ps2_flags ^= SETTINGS_FLAGS_AUTOBOOT;
+    SETTINGS_UPDATE_FIELD(ps2_flags);    
 }
