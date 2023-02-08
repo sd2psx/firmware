@@ -15,7 +15,7 @@
 #include "sd.h"
 #include "keystore.h"
 #include "settings.h"
-#include "version.h"
+#include "version/version.h"
 
 #include "ps1/ps1_memory_card.h"
 #include "ps1/ps1_dirty.h"

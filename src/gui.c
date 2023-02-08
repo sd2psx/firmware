@@ -2,7 +2,6 @@
 
 #include <inttypes.h>
 #include <stdio.h>
-#include <version.h>
 
 #include "config.h"
 #include "lvgl.h"
@@ -20,6 +19,8 @@
 #include "ps2/ps2_cardman.h"
 #include "ps2/ps2_dirty.h"
 #include "ps2/ps2_exploit.h"
+
+#include "version/version.h"
 
 #include "ui_theme_mono.h"
 
@@ -590,6 +591,22 @@ static void create_menu_screen(void) {
         lv_obj_add_event_cb(cont, evt_do_civ_deploy, LV_EVENT_CLICKED, NULL);
     }
 
+    /* Info submenu */
+    lv_obj_t *info_page = ui_menu_subpage_create(menu, "Info");
+    {
+        cont = ui_menu_cont_create_nav(info_page);
+        ui_label_create_grow_scroll(cont, "Version");
+        ui_label_create(cont, sd2psx_version);
+
+        cont = ui_menu_cont_create_nav(info_page);
+        ui_label_create_grow_scroll(cont, "Commit");
+        ui_label_create(cont, sd2psx_commit);
+
+        cont = ui_menu_cont_create_nav(info_page);
+        ui_label_create_grow_scroll(cont, "Debug");
+        ui_label_create(cont, DEBUG_USB_UART ? "Yes" : "No");
+    }
+
     /* Main menu */
     main_page = ui_menu_subpage_create(menu, NULL);
     {
@@ -614,8 +631,10 @@ static void create_menu_screen(void) {
         ui_menu_set_load_page_event(menu, cont, display_page);
 
         cont = ui_menu_cont_create_nav(main_page);
-        ui_label_create_grow_scroll(cont, "Version");
-        ui_label_create(cont, sd2psx_version);
+        ui_label_create_grow_scroll(cont, "Info");
+        ui_label_create(cont, ">");
+        ui_menu_set_load_page_event(menu, cont, info_page);
+
     }
 
     ui_menu_set_page(menu, main_page);

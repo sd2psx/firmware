@@ -14,24 +14,12 @@ endif()
 
 pico_sdk_init()
 
-find_package(Git QUIET)
-
-if(Git_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
-    execute_process(COMMAND ${GIT_EXECUTABLE} fetch --all --tags --force)
-    execute_process(COMMAND ${GIT_EXECUTABLE} describe --exclude latest
-                    OUTPUT_VARIABLE SD2PSX_VERSION)
-    string(REGEX REPLACE "\n$" "" SD2PSX_VERSION "${SD2PSX_VERSION}")
-else()
-    set(SD2PSX_VERSION "Dev")
-endif()
-    
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/template/version.c ${CMAKE_CURRENT_BINARY_DIR}/version.c @ONLY)
-
 set(LV_CONF_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/lv_conf.h CACHE STRING "" FORCE)
 add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
 
 add_subdirectory(database)
 add_subdirectory(ps2boot)
+add_subdirectory(src/version)
 
 add_executable(sd2psx
     src/main.c
