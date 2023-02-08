@@ -46,13 +46,22 @@ jobs:
       
     - name: Rename Debug USB uf2
       run: mv build_usb/sd2psx.uf2 build/sd2psx_usb_debug.uf2
-      
+
+    - name: Generate Version
+      run: |
+        git fetch --all --tags
+        git describe --exclude latest | sed 's/\(.*\)-.*/\1/'
+        SD2PSX_VERSION=$(git describe --exclude latest | sed 's/\(.*\)-.*/\1/')
+        echo "SD2PSX_VERSION=${SD2PSX_VERSION}" >> $GITHUB_ENV
+        echo "${SD2PSX_VERSION}"
+      shell: bash
 
     - uses: marvinpinto/action-automatic-releases@v1.2.1
       if: github.event_name != 'pull_request'
       # uses: marvinpinto/action-automatic-releases@919008cf3f741b179569b7a6fb4d8860689ab7f0
       with:
         # GitHub secret token
+        title:  "${{ env.SD2PSX_VERSION }}"
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: latest
         prerelease: true

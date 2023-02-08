@@ -19,8 +19,8 @@ add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
 
 add_subdirectory(database)
 add_subdirectory(ps2boot)
+add_subdirectory(src/version)
 
-                
 add_executable(sd2psx
     src/main.c
     src/debug.c
@@ -90,6 +90,8 @@ add_executable(sd2psx
     ext/ESP8266SdFat/src/SdCard/SdSpiCard.cpp
 
     ext/fnv/hash_64a.c
+
+    ${CMAKE_CURRENT_BINARY_DIR}/version.c
 )
 
 add_library(ssd1306 STATIC ext/pico-ssd1306/ssd1306.c)
