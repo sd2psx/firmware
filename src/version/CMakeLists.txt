@@ -1,7 +1,7 @@
 
 find_package(Git QUIET)
 
-if(Git_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../.git")
+if(Git_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../.git")
     execute_process(COMMAND ${GIT_EXECUTABLE} fetch --all --tags --force)
     execute_process(COMMAND ${GIT_EXECUTABLE} describe --exclude latest --abbrev=0
                     OUTPUT_VARIABLE SD2PSX_VERSION)
@@ -19,4 +19,4 @@ else()
 endif()
     
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/template/version.c ${CMAKE_CURRENT_BINARY_DIR}/version.c @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/template/version.c ${CMAKE_CURRENT_SOURCE_DIR}/version.c @ONLY)

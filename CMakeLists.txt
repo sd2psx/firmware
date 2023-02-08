@@ -53,6 +53,8 @@ add_executable(sd2psx
     src/arduino_wrapper/sd.cpp
     src/arduino_wrapper/SPI.cpp
 
+    src/version/version.c
+
     ext/ESP8266SdFat/src/common/FmtNumber.cpp
     ext/ESP8266SdFat/src/common/FsCache.cpp
     ext/ESP8266SdFat/src/common/FsDateTime.cpp
@@ -90,8 +92,6 @@ add_executable(sd2psx
     ext/ESP8266SdFat/src/SdCard/SdSpiCard.cpp
 
     ext/fnv/hash_64a.c
-
-    ${CMAKE_CURRENT_BINARY_DIR}/version.c
 )
 
 add_library(ssd1306 STATIC ext/pico-ssd1306/ssd1306.c)
