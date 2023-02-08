@@ -15,6 +15,7 @@
 #include "sd.h"
 #include "keystore.h"
 #include "settings.h"
+#include "version/version.h"
 
 #include "ps1/ps1_memory_card.h"
 #include "ps1/ps1_dirty.h"
@@ -125,6 +126,7 @@ int main() {
         gui_do_ps2_card_switch();
         uint64_t end = time_us_64();
         printf("DONE! (%d us)\n", (int)(end - start));
+        printf("SD2PSX Version %s\n", sd2psx_version);
 
         while (1) {
             debug_task();

@@ -19,7 +19,8 @@ add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
 
 add_subdirectory(database)
 add_subdirectory(ps2boot)
-                
+add_subdirectory(src/version)
+
 add_executable(sd2psx
     src/main.c
     src/debug.c
@@ -46,14 +47,13 @@ add_executable(sd2psx
     src/ps2/ps2_psram.c
     src/ps2/ps2_exploit.c
 
-    src/game_names/game_names.c
-
     src/wear_leveling/wear_leveling.c
     src/wear_leveling/wear_leveling_rp2040_flash.c
 
     src/arduino_wrapper/sd.cpp
     src/arduino_wrapper/SPI.cpp
 
+    src/version/version.c
 
     ext/ESP8266SdFat/src/common/FmtNumber.cpp
     ext/ESP8266SdFat/src/common/FsCache.cpp
