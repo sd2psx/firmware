@@ -22,7 +22,7 @@ jobs:
       with:
          submodules: 'recursive'
          fetch-depth: '0'
-      run: |
+    - run: |
         git fetch --prune --tags
         git tag --list
         git fetch --all --tags
