@@ -604,7 +604,11 @@ static void create_menu_screen(void) {
 
         cont = ui_menu_cont_create_nav(info_page);
         ui_label_create_grow_scroll(cont, "Debug");
-        ui_label_create(cont, DEBUG_USB_UART ? "Yes" : "No");
+#ifdef DEBUG_USB_UART
+        ui_label_create(cont, "Yes");
+#else
+        ui_label_create(cont, "No");
+#endif
     }
 
     /* Main menu */
