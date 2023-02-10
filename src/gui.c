@@ -743,13 +743,14 @@ void gui_do_ps2_card_switch(void) {
 void gui_task(void) {
     input_update_display(g_navbar);
 
+    char card_name[127];
+    const char* folder_name = NULL;
+
     if (settings_get_mode() == MODE_PS1) {
         static int displayed_card_idx = -1;
         static int displayed_card_channel = -1;
         static char card_idx_s[8];
         static char card_channel_s[8];
-        char card_name[127];
-        const char* folder_name = NULL;
 
         if (displayed_card_idx != ps1_cardman_get_idx() || displayed_card_channel != ps1_cardman_get_channel() || refresh_gui) {
             displayed_card_idx = ps1_cardman_get_idx();
@@ -793,6 +794,8 @@ void gui_task(void) {
         if (displayed_card_idx != ps2_cardman_get_idx() || displayed_card_channel != ps2_cardman_get_channel()) {
             displayed_card_idx = ps2_cardman_get_idx();
             displayed_card_channel = ps2_cardman_get_channel();
+            folder_name = ps2_cardman_get_folder_name();
+
             if (displayed_card_idx == 0) {
                 snprintf(card_idx_s, sizeof(card_idx_s), "BOOT");
                 snprintf(card_channel_s, sizeof(card_channel_s), " ");
@@ -804,6 +807,20 @@ void gui_task(void) {
                 lv_label_set_text(lbl_channel, "Channel");
             }
             lv_label_set_text(scr_main_idx_lbl, card_idx_s);
+
+
+            memset(card_name, 0, sizeof(card_name));
+            game_names_get_name_by_folder(folder_name, card_name);
+
+            if (card_name[0])
+            {
+                lv_label_set_text(src_main_title_lbl, card_name);
+            }
+            else
+            {
+                lv_label_set_text(src_main_title_lbl, "");
+            }
+
             lv_label_set_text(scr_main_channel_lbl, card_channel_s);
         }
 
