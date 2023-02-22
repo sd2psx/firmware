@@ -54,6 +54,7 @@ add_executable(sd2psx
     src/arduino_wrapper/SPI.cpp
 
     src/version/version.c
+    src/game_names/game_names.c
 
     ext/ESP8266SdFat/src/common/FmtNumber.cpp
     ext/ESP8266SdFat/src/common/FsCache.cpp
