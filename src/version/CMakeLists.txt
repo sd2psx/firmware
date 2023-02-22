@@ -19,4 +19,4 @@ else()
 endif()
     
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/template/version.c ${CMAKE_CURRENT_SOURCE_DIR}/version.c @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/template/version.c ${CMAKE_CURRENT_BINARY_DIR}/version.c @ONLY)
