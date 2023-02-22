@@ -41,6 +41,7 @@ void ps2_cardman_init(void) {
     if (settings_get_ps2_autoboot()) {
         card_idx = IDX_BOOT;
         card_chan = CHAN_MIN;
+        snprintf(folder_name, sizeof(folder_name), "BOOT");
     } else {
         card_idx = settings_get_ps2_card();
         if (card_idx < IDX_MIN)
@@ -48,8 +49,8 @@ void ps2_cardman_init(void) {
         card_chan = settings_get_ps2_channel();
         if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
             card_chan = CHAN_MIN;
+        snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
     }
-    snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
 }
 
 int ps2_cardman_write_sector(int sector, void *buf512) {
@@ -72,11 +73,8 @@ void ps2_cardman_flush(void) {
 
 static void ensuredirs(void) {
     char cardpath[32];
-    if (IDX_BOOT == card_idx)
-        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/BOOT");
-    else 
-        snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/%s", folder_name);
-
+    
+    snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/%s", folder_name);
 
     sd_mkdir("MemoryCards");
     sd_mkdir("MemoryCards/PS2");
@@ -228,7 +226,7 @@ void ps2_cardman_open(void) {
     ensuredirs();
 
     if (IDX_BOOT == card_idx)
-        snprintf(path, sizeof(path), "MemoryCards/PS2/BOOT/BootCard.mcd");
+        snprintf(path, sizeof(path), "MemoryCards/PS2/%s/BootCard.mcd", folder_name);
     else
     {
         snprintf(path, sizeof(path), "MemoryCards/PS2/%s/%s-%d.mcd", folder_name, folder_name, card_chan);
