@@ -33,7 +33,7 @@ jobs:
           echo "SD2PSX_RLS_TAG=latest" >> $GITHUB_ENV
           echo "${TAG}"
         else
-          echo "SD2PSX_VERSION=nightly" >> $GITHUB_ENV
+          echo "SD2PSX_VERSION=nightly-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           echo "SD2PSX_RLS_TAG=nightly" >> $GITHUB_ENV
           echo "nightly"
         fi
