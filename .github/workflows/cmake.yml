@@ -26,7 +26,7 @@ jobs:
         git fetch --prune --tags
         git tag --list
         git fetch --all --tags
-        TAG=$(git describe --tags --exact-match HEAD --exclude=latest) || true
+        TAG=$(git describe --tags --exact-match HEAD --exclude=latest --exclude=nightly) || true
         if [ $TAG ]
         then
           echo "SD2PSX_VERSION=${TAG}" >> $GITHUB_ENV
