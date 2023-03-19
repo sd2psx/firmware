@@ -3,7 +3,7 @@ find_package(Git QUIET)
 
 if(Git_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../.git")
     execute_process(COMMAND ${GIT_EXECUTABLE} fetch --all --tags --force)
-    execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --exact-match HEAD --exclude=latest
+    execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --exact-match HEAD --exclude=latest --exclude=nightly
                     OUTPUT_VARIABLE SD2PSX_VERSION)
     execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
                     OUTPUT_VARIABLE SD2PSX_COMMIT)
