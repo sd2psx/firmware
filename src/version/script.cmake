@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 find_package(Git QUIET)
 
 if(Git_FOUND AND EXISTS "${SCRIPT_WORKING_DIR}/../../.git")
-    execute_process(COMMAND ${GIT_EXECUTABLE} fetch --all --tags --force WORKING_DIRECTORY ${SCRIPT_WORKING_DIR})
+    execute_process(COMMAND ${GIT_EXECUTABLE} fetch origin --tags --force WORKING_DIRECTORY ${SCRIPT_WORKING_DIR})
     execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --exact-match HEAD --exclude=latest --exclude=nightly
                     OUTPUT_VARIABLE SD2PSX_VERSION WORKING_DIRECTORY ${SCRIPT_WORKING_DIR})
     execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
