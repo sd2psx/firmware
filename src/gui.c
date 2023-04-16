@@ -20,6 +20,8 @@
 #include "ps2/ps2_dirty.h"
 #include "ps2/ps2_exploit.h"
 
+#include "version/version.h"
+
 #include "ui_theme_mono.h"
 
 /* Displays the line at the bottom for long pressing buttons */
@@ -589,6 +591,26 @@ static void create_menu_screen(void) {
         lv_obj_add_event_cb(cont, evt_do_civ_deploy, LV_EVENT_CLICKED, NULL);
     }
 
+    /* Info submenu */
+    lv_obj_t *info_page = ui_menu_subpage_create(menu, "Info");
+    {
+        cont = ui_menu_cont_create_nav(info_page);
+        ui_label_create_grow_scroll(cont, "Version");
+        ui_label_create(cont, sd2psx_version);
+
+        cont = ui_menu_cont_create_nav(info_page);
+        ui_label_create_grow_scroll(cont, "Commit");
+        ui_label_create(cont, sd2psx_commit);
+
+        cont = ui_menu_cont_create_nav(info_page);
+        ui_label_create_grow_scroll(cont, "Debug");
+#ifdef DEBUG_USB_UART
+        ui_label_create(cont, "Yes");
+#else
+        ui_label_create(cont, "No");
+#endif
+    }
+
     /* Main menu */
     main_page = ui_menu_subpage_create(menu, NULL);
     {
@@ -611,6 +633,12 @@ static void create_menu_screen(void) {
         ui_label_create_grow(cont, "Display");
         ui_label_create(cont, ">");
         ui_menu_set_load_page_event(menu, cont, display_page);
+
+        cont = ui_menu_cont_create_nav(main_page);
+        ui_label_create_grow_scroll(cont, "Info");
+        ui_label_create(cont, ">");
+        ui_menu_set_load_page_event(menu, cont, info_page);
+
     }
 
     ui_menu_set_page(menu, main_page);
