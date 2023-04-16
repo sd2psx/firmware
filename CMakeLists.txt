@@ -19,8 +19,8 @@ add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
 
 add_subdirectory(database)
 add_subdirectory(ps2boot)
+add_subdirectory(src/version)
 
-                
 add_executable(sd2psx
     src/main.c
     src/debug.c
@@ -133,6 +133,7 @@ target_link_libraries(sd2psx
     lvgl::lvgl
     gamedb
     ps2boot
+    sd2psx_version
 )
 
 add_dependencies(sd2psx gamedb ps2boot)
