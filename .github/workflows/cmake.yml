@@ -23,12 +23,18 @@ jobs:
          submodules: 'recursive'
          fetch-depth: '0'
     - run: |
-        git fetch --prune --tags
-        git tag --list
-        git fetch --all --tags
-        SD2PSX_VERSION=$(git describe --exclude latest | sed 's/\(.*\)-.*/\1/')
-        echo "SD2PSX_VERSION=${SD2PSX_VERSION}" >> $GITHUB_ENV
-        echo "${SD2PSX_VERSION}"
+        git fetch origin --tags --force
+        TAG=$(git describe --tags --exact-match HEAD --exclude=latest --exclude=nightly) || true
+        if [ $TAG ]
+        then
+          echo "SD2PSX_VERSION=${TAG}" >> $GITHUB_ENV
+          echo "SD2PSX_RLS_TAG=latest" >> $GITHUB_ENV
+          echo "${TAG}"
+        else
+          echo "SD2PSX_VERSION=nightly-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "SD2PSX_RLS_TAG=nightly" >> $GITHUB_ENV
+          echo "nightly"
+        fi
       
     - name: add build essential
       run: sudo apt update && sudo apt install -y build-essential gcc-arm-none-eabi
@@ -63,7 +69,7 @@ jobs:
         # GitHub secret token
         title:  "${{ env.SD2PSX_VERSION }}"
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: latest
+        automatic_release_tag: ${{ env.SD2PSX_RLS_TAG }}
         prerelease: true
         # Assets to upload to the release
         files: |

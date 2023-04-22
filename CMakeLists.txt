@@ -53,9 +53,6 @@ add_executable(sd2psx
     src/arduino_wrapper/sd.cpp
     src/arduino_wrapper/SPI.cpp
 
-    src/version/version.c
-    src/game_names/game_names.c
-
     ext/ESP8266SdFat/src/common/FmtNumber.cpp
     ext/ESP8266SdFat/src/common/FsCache.cpp
     ext/ESP8266SdFat/src/common/FsDateTime.cpp
@@ -136,6 +133,7 @@ target_link_libraries(sd2psx
     lvgl::lvgl
     gamedb
     ps2boot
+    sd2psx_version
 )
 
 add_dependencies(sd2psx gamedb ps2boot)
