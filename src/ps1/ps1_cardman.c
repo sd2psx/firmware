@@ -64,14 +64,14 @@ static bool ps1_cardman_sanity_check_game_id(const char* const game_id) {
     return (i > 0);
 }
 
+#pragma GCC diagnostic ignored "-Warray-bounds"
 static uint32_t ps1_cardman_char_array_to_uint32(const char in[4]) {
-#if BIG_ENDIAN
     char inter[4] = {in[3], in[2], in[1], in[0]};
-#else
-    char* inter = in;
-#endif
-    return *(uint32_t*)inter;
+    uint32_t tgt;
+    memcpy(&tgt, inter, sizeof(tgt));
+    return tgt;
 }
+#pragma GCC diagnostic pop
 
 static uint32_t ps1_cardman_find_prefix_offset(uint32_t numericPrefix) {
     uint32_t offset = 0;
