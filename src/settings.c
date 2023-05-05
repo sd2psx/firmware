@@ -65,10 +65,14 @@ void settings_update_part(void *settings_ptr, uint32_t sz) {
 #define SETTINGS_UPDATE_FIELD(field) settings_update_part(&settings.field, sizeof(settings.field))
 
 int settings_get_ps2_card(void) {
+    if (settings.ps2_card < IDX_MIN)
+        return IDX_MIN;
     return settings.ps2_card;
 }
 
 int settings_get_ps2_channel(void) {
+    if (settings.ps2_channel < CHAN_MIN || settings.ps2_channel > CHAN_MAX)
+        return CHAN_MIN;
     return settings.ps2_channel;
 }
 
@@ -87,10 +91,14 @@ void settings_set_ps2_channel(int chan) {
 }
 
 int settings_get_ps1_card(void) {
+    if (settings.ps1_card < IDX_MIN)
+        return IDX_MIN;
     return settings.ps1_card;
 }
 
 int settings_get_ps1_channel(void) {
+    if (settings.ps1_channel < CHAN_MIN || settings.ps1_channel > CHAN_MAX)
+        return CHAN_MIN;
     return settings.ps1_channel;
 }
 
@@ -131,5 +139,5 @@ bool settings_get_ps2_autoboot(void) {
 void settings_set_ps2_autoboot(bool autoboot) {
     if (autoboot != settings_get_ps2_autoboot())
         settings.ps2_flags ^= SETTINGS_FLAGS_AUTOBOOT;
-    SETTINGS_UPDATE_FIELD(ps2_flags);    
+    SETTINGS_UPDATE_FIELD(ps2_flags);
 }

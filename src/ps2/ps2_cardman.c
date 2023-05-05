@@ -19,11 +19,6 @@
 static uint8_t flushbuf[BLOCK_SIZE];
 static int fd = -1;
 
-#define IDX_MIN 1
-#define IDX_BOOT 0
-#define CHAN_MIN 1
-#define CHAN_MAX 8
-
 static int card_idx;
 static int card_chan;
 static uint32_t card_size;
@@ -38,11 +33,7 @@ void ps2_cardman_init(void) {
         card_chan = CHAN_MIN;
     } else {
         card_idx = settings_get_ps2_card();
-        if (card_idx < IDX_MIN)
-            card_idx = IDX_MIN;
         card_chan = settings_get_ps2_channel();
-        if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
-            card_chan = CHAN_MIN;
     }
 }
 
@@ -68,7 +59,7 @@ static void ensuredirs(void) {
     char cardpath[32];
     if (IDX_BOOT == card_idx)
         snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/BOOT");
-    else 
+    else
         snprintf(cardpath, sizeof(cardpath), "MemoryCards/PS2/Card%d", card_idx);
 
     sd_mkdir("MemoryCards");
@@ -219,10 +210,9 @@ void ps2_cardman_open(void) {
     char path[64];
 
     ensuredirs();
-    if (IDX_BOOT == card_idx)
+    if (IDX_BOOT == card_idx) {
         snprintf(path, sizeof(path), "MemoryCards/PS2/BOOT/BootCard.mcd");
-    else
-    {
+    } else {
         snprintf(path, sizeof(path), "MemoryCards/PS2/Card%d/Card%d-%d.mcd", card_idx, card_idx, card_chan);
         /* this is ok to do on every boot because it wouldn't update if the value is the same as currently stored */
         settings_set_ps2_card(card_idx);
@@ -270,13 +260,13 @@ void ps2_cardman_open(void) {
             fatal("cannot open card");
 
         card_size = sd_filesize(fd);
-        if ((card_size != PS2_CARD_SIZE_512K) 
-            && (card_size != PS2_CARD_SIZE_1M) 
-            && (card_size != PS2_CARD_SIZE_2M) 
-            && (card_size != PS2_CARD_SIZE_4M) 
+        if ((card_size != PS2_CARD_SIZE_512K)
+            && (card_size != PS2_CARD_SIZE_1M)
+            && (card_size != PS2_CARD_SIZE_2M)
+            && (card_size != PS2_CARD_SIZE_4M)
             && (card_size != PS2_CARD_SIZE_8M))
             fatal("Card %d Channel %d is corrupted", card_idx, card_chan);
-        
+
         /* read 8 megs of card image */
         printf("reading card (%lu KB).... ", (uint32_t)(card_size / 1024));
         cardprog_start = time_us_64();

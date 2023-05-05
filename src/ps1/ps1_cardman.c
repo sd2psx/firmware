@@ -156,11 +156,7 @@ static bool ps1_cardman_update_game_data(const char* const id) {
 
 void ps1_cardman_init(void) {
     card_idx = settings_get_ps1_card();
-    if (card_idx < IDX_MIN)
-        card_idx = IDX_MIN;
     card_chan = settings_get_ps1_channel();
-    if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
-        card_chan = CHAN_MIN;
     memset(card_game_id, 0, sizeof(card_game_id));
 }
 
