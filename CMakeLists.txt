@@ -8,10 +8,6 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 # set(PICO_COPY_TO_RAM 1)
 
-if (CMAKE_C_BYTE_ORDER EQUAL BIG_ENDIAN)
-    add_compile_definitions("-DBIG_ENDIAN")
-endif()
-
 pico_sdk_init()
 
 set(LV_CONF_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/lv_conf.h CACHE STRING "" FORCE)

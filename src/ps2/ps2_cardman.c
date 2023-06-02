@@ -44,11 +44,7 @@ void ps2_cardman_init(void) {
         snprintf(folder_name, sizeof(folder_name), "BOOT");
     } else {
         card_idx = settings_get_ps2_card();
-        if (card_idx < IDX_MIN)
-            card_idx = IDX_MIN;
         card_chan = settings_get_ps2_channel();
-        if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
-            card_chan = CHAN_MIN;
         snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
     }
 }
@@ -276,13 +272,13 @@ void ps2_cardman_open(void) {
             fatal("cannot open card");
 
         card_size = sd_filesize(fd);
-        if ((card_size != PS2_CARD_SIZE_512K) 
-            && (card_size != PS2_CARD_SIZE_1M) 
-            && (card_size != PS2_CARD_SIZE_2M) 
-            && (card_size != PS2_CARD_SIZE_4M) 
+        if ((card_size != PS2_CARD_SIZE_512K)
+            && (card_size != PS2_CARD_SIZE_1M)
+            && (card_size != PS2_CARD_SIZE_2M)
+            && (card_size != PS2_CARD_SIZE_4M)
             && (card_size != PS2_CARD_SIZE_8M))
             fatal("Card %d Channel %d is corrupted", card_idx, card_chan);
-        
+
         /* read 8 megs of card image */
         printf("reading card (%lu KB).... ", (uint32_t)(card_size / 1024));
         cardprog_start = time_us_64();

@@ -63,14 +63,14 @@ bool __time_critical_func(game_names_sanity_check_title_id)(const char* const ti
     return (i > 0);
 }
 
+#pragma GCC diagnostic ignored "-Warray-bounds"
 static uint32_t game_names_char_array_to_uint32(const char in[4]) {
-#if BIG_ENDIAN
     char inter[4] = {in[3], in[2], in[1], in[0]};
-#else
-    char* inter = in;
-#endif
-    return *(uint32_t*)inter;
+    uint32_t tgt;
+    memcpy((void*)&tgt, (void*)inter, sizeof(tgt));
+    return tgt;
 }
+#pragma GCC diagnostic pop
 
 static uint32_t game_names_find_prefix_offset(uint32_t numericPrefix, const char* const db_start) {
     uint32_t offset = 0;
