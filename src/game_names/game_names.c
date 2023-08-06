@@ -33,7 +33,7 @@ typedef struct {
     const char* name;
 } game_lookup;
 
-bool __time_critical_func(game_names_sanity_check_title_id)(const char* const title_id) {
+bool game_names_sanity_check_title_id(const char* const title_id) {
     uint8_t i = 0U;
 
     char splittable_game_id[MAX_GAME_ID_LENGTH];
