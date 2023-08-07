@@ -61,6 +61,13 @@ jobs:
     - name: Rename Debug USB uf2
       run: mv build_usb/sd2psx.uf2 build/sd2psx_usb_debug.uf2
 
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: SD2PSX-${{ github.sha }}
+        path: |
+          release/*
+
     - uses: marvinpinto/action-automatic-releases@v1.2.1
       if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') #only release on tag or master branch
       with:
