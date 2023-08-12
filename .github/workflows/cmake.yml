@@ -2,9 +2,10 @@ name: CMake
 
 on:
   push:
-    branches: [ "main", "develop" ]
-  pull_request:
-    branches: [ "main", "develop" ]
+    branches:
+      - '*'
+    tags:
+      - 'v*'
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -39,8 +40,6 @@ jobs:
     - name: add build essential
       run: sudo apt update && sudo apt install -y build-essential gcc-arm-none-eabi
 
-
-
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -62,15 +61,21 @@ jobs:
     - name: Rename Debug USB uf2
       run: mv build_usb/sd2psx.uf2 build/sd2psx_usb_debug.uf2
 
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: SD2PSX-${{ github.sha }}
+        path: |
+          build/*.uf2
+
     - uses: marvinpinto/action-automatic-releases@v1.2.1
-      if: github.event_name != 'pull_request'
-      # uses: marvinpinto/action-automatic-releases@919008cf3f741b179569b7a6fb4d8860689ab7f0
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') #only release on tag or master branch
       with:
         # GitHub secret token
         title:  "${{ env.SD2PSX_VERSION }}"
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: ${{ env.SD2PSX_RLS_TAG }}
-        prerelease: true
+        prerelease: !startsWith(github.ref, 'refs/tags/v') #set as release if this is a tag
         # Assets to upload to the release
         files: |
           build/*.uf2
