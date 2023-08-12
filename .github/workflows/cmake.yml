@@ -36,7 +36,7 @@ jobs:
           echo "SD2PSX_RLS_TAG=nightly" >> $GITHUB_ENV
           echo "nightly"
         fi
-      
+
     - name: add build essential
       run: sudo apt update && sudo apt install -y build-essential gcc-arm-none-eabi
 
@@ -48,7 +48,7 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-      
+
     - name: Configure CMake for Debug USB
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -57,7 +57,7 @@ jobs:
     - name: Build Debug USB
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build_usb --config ${{env.BUILD_TYPE}}
-      
+
     - name: Rename Debug USB uf2
       run: mv build_usb/sd2psx.uf2 build/sd2psx_usb_debug.uf2
 
@@ -75,9 +75,7 @@ jobs:
         title:  "${{ env.SD2PSX_VERSION }}"
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: ${{ env.SD2PSX_RLS_TAG }}
-        prerelease: startsWith(github.ref, 'refs/tags/v') == false #set as release if this is a tag
+        prerelease: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         # Assets to upload to the release
         files: |
           build/*.uf2
-
- 
