@@ -75,7 +75,7 @@ jobs:
         title:  "${{ env.SD2PSX_VERSION }}"
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: ${{ env.SD2PSX_RLS_TAG }}
-        prerelease: !startsWith(github.ref, 'refs/tags/v') #set as release if this is a tag
+        prerelease: startsWith(github.ref, 'refs/tags/v') == false #set as release if this is a tag
         # Assets to upload to the release
         files: |
           build/*.uf2
