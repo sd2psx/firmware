@@ -36,7 +36,7 @@ add_executable(sd2psx
     src/ps1/ps1_empty_card.c
     src/ps1/ps1_odeman.c
 
-    src/ps2/ps2_memory_card.c
+    src/ps2/card_emu/ps2_memory_card.c
     src/ps2/ps2_dirty.c
     src/ps2/ps2_cardman.c
     src/ps2/ps2_pio_qspi.c
@@ -115,7 +115,7 @@ target_include_directories(sd2psx PUBLIC
 )
 
 pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/ps1/ps1_mc_spi.pio)
-pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/ps2/ps2_mc_spi.pio)
+pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/ps2/card_emu/ps2_mc_spi.pio)
 pico_generate_pio_header(sd2psx ${CMAKE_CURRENT_LIST_DIR}/src/ps2/ps2_qspi.pio)
 
 target_link_libraries(sd2psx

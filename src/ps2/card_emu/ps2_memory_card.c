@@ -12,11 +12,11 @@
 #include "keystore.h"
 #include "des.h"
 
-#include "ps2_dirty.h"
-#include "ps2_psram.h"
-#include "ps2_pio_qspi.h"
-#include "ps2_cardman.h"
-#include "ps2_exploit.h"
+#include "../ps2_dirty.h"
+#include "../ps2_psram.h"
+#include "../ps2_pio_qspi.h"
+#include "../ps2_cardman.h"
+#include "../ps2_exploit.h"
 
 #include <stdbool.h>
 #include <string.h>

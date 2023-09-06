@@ -22,8 +22,8 @@
 #include "ps1/ps1_cardman.h"
 #include "ps1/ps1_odeman.h"
 
-#include "ps2/ps2_memory_card.h"
 #include "ps2/ps2_dirty.h"
+#include "ps2/card_emu/ps2_memory_card.h"
 #include "ps2/ps2_cardman.h"
 #include "ps2/ps2_psram.h"
 #include "ps2/ps2_exploit.h"
