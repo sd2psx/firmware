@@ -316,15 +316,18 @@ NEXTCMD:
         recvfirst();
 
         if (cmd == 0x81) {
+            void (*send)(uint8_t) = NULL;
             if (probe_clock()) {
-#define send mc_respond_fast
-#include "ps2_memory_card.in.c"
-#undef send
+                send =  &mc_respond_fast;
+//#define send mc_respond_fast
+//#include "ps2_memory_card.in.c"
+//#undef send
             } else {
-#define send mc_respond_slow
-#include "ps2_memory_card.in.c"
-#undef send
+                send =  &mc_respond_slow;
+//#define send mc_respond_slow
+//#undef send
             }
+#include "ps2_memory_card.in.c"
         } else {
             // not for us
             continue;
