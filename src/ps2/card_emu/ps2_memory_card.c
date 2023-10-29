@@ -18,7 +18,10 @@
 #include "../ps2_cardman.h"
 #include "../ps2_exploit.h"
 
+#include "game_names/game_names.h"
+
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 
@@ -32,12 +35,20 @@ int ignore;
 uint8_t flag;
 bool flash_mode = false;
 
+static char received_game_id[0x10] = { 0 };
+
 typedef struct {
     uint32_t offset;
     uint32_t sm;
 } pio_t;
 
-pio_t cmd_reader, dat_writer, dat_writer_slow, clock_probe;
+enum {
+    RECEIVE_RESET,
+    RECEIVE_EXIT, 
+    RECEIVE_OK
+};
+
+pio_t cmd_reader, dat_writer,  clock_probe;
 
 #define ERASE_SECTORS 16
 #define CARD_SIZE (8 * 1024 * 1024)
@@ -81,20 +92,18 @@ static inline void __time_critical_func(RAM_pio_sm_drain_tx_fifo)(PIO pio, uint 
 }
 
 static void __time_critical_func(reset_pio)(void) {
-    pio_set_sm_mask_enabled(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm) | (1 << dat_writer_slow.sm) | (1 << clock_probe.sm), false);
-    pio_restart_sm_mask(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm) | (1 << dat_writer_slow.sm) | (1 << clock_probe.sm));
+    pio_set_sm_mask_enabled(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm) | (1 << clock_probe.sm), false);
+    pio_restart_sm_mask(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm) | (1 << clock_probe.sm));
 
     pio_sm_exec(pio0, cmd_reader.sm, pio_encode_jmp(cmd_reader.offset));
     pio_sm_exec(pio0, dat_writer.sm, pio_encode_jmp(dat_writer.offset));
-    pio_sm_exec(pio0, dat_writer_slow.sm, pio_encode_jmp(dat_writer_slow.offset));
     pio_sm_exec(pio0, clock_probe.sm, pio_encode_jmp(clock_probe.offset));
 
     pio_sm_clear_fifos(pio0, cmd_reader.sm);
     RAM_pio_sm_drain_tx_fifo(pio0, dat_writer.sm);
-    RAM_pio_sm_drain_tx_fifo(pio0, dat_writer_slow.sm);
     pio_sm_clear_fifos(pio0, clock_probe.sm);
 
-    pio_enable_sm_mask_in_sync(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm) | (1 << dat_writer_slow.sm) | (1 << clock_probe.sm));
+    pio_enable_sm_mask_in_sync(pio0, (1 << cmd_reader.sm) | (1 << dat_writer.sm) | (1 << clock_probe.sm));
 
     reset = 1;
 }
@@ -106,11 +115,13 @@ static void __time_critical_func(init_pio)(void) {
     gpio_set_dir(PIN_PSX_CLK, 0);
     gpio_set_dir(PIN_PSX_CMD, 0);
     gpio_set_dir(PIN_PSX_DAT, 0);
+    gpio_set_dir(PIN_PSX_SPD_SEL, true);
     gpio_disable_pulls(PIN_PSX_ACK);
     gpio_disable_pulls(PIN_PSX_SEL);
     gpio_disable_pulls(PIN_PSX_CLK);
     gpio_disable_pulls(PIN_PSX_CMD);
     gpio_disable_pulls(PIN_PSX_DAT);
+    gpio_disable_pulls(PIN_PSX_SPD_SEL);
 
     cmd_reader.offset = pio_add_program(pio0, &cmd_reader_program);
     cmd_reader.sm = pio_claim_unused_sm(pio0, true);
@@ -118,15 +129,12 @@ static void __time_critical_func(init_pio)(void) {
     dat_writer.offset = pio_add_program(pio0, &dat_writer_program);
     dat_writer.sm = pio_claim_unused_sm(pio0, true);
 
-    dat_writer_slow.offset = pio_add_program(pio0, &dat_writer_slow_program);
-    dat_writer_slow.sm = pio_claim_unused_sm(pio0, true);
 
     clock_probe.offset = pio_add_program(pio0, &clock_probe_program);
     clock_probe.sm = pio_claim_unused_sm(pio0, true);
 
     cmd_reader_program_init(pio0, cmd_reader.sm, cmd_reader.offset);
     dat_writer_program_init(pio0, dat_writer.sm, dat_writer.offset);
-    dat_writer_slow_program_init(pio0, dat_writer_slow.sm, dat_writer_slow.offset);
     clock_probe_program_init(pio0, clock_probe.sm, clock_probe.offset);
 }
 
@@ -134,6 +142,23 @@ static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask
     if (gpio == PIN_PSX_SEL && (event_mask & GPIO_IRQ_EDGE_RISE)) {
         reset_pio();
     }
+}
+
+#define receiveOrNextCmd(cmd) if(receive(cmd)==RECEIVE_RESET) continue
+
+static inline __attribute__((always_inline)) uint8_t receive(uint8_t* cmd) {
+    while ( 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+    1) { 
+        if (reset) 
+            return RECEIVE_RESET; 
+    } 
+    (*cmd) = (pio_sm_get(pio0, cmd_reader.sm) >> 24);
+    return RECEIVE_OK;
 }
 
 #define recv() do { \
@@ -149,6 +174,23 @@ static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask
     } \
     cmd = (uint8_t) (pio_sm_get(pio0, cmd_reader.sm) >> 24); \
 } while (0);
+
+static inline __attribute__((always_inline)) uint8_t receiveFirst(uint8_t* cmd) {
+    while ( 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
+    1) { 
+        if (reset) 
+            return RECEIVE_RESET;
+        if (mc_exit_request)
+            return RECEIVE_EXIT;
+    } 
+    (*cmd) = (pio_sm_get(pio0, cmd_reader.sm) >> 24);
+    return RECEIVE_OK;
+}
 
 #define recvfirst() do { \
     while ( \
@@ -166,17 +208,10 @@ static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask
     cmd = (uint8_t) (pio_sm_get(pio0, cmd_reader.sm) >> 24); \
 } while (0);
 
-static inline uint32_t __time_critical_func(probe_clock)(void) {
-    return pio_sm_get_blocking(pio0, clock_probe.sm);
-}
-
-static inline void __time_critical_func(mc_respond_fast)(uint8_t ch) {
+static inline void __time_critical_func(mc_respond)(uint8_t ch) {
     pio_sm_put_blocking(pio0, dat_writer.sm, ch);
 }
 
-static inline void __time_critical_func(mc_respond_slow)(uint8_t ch) {
-    pio_sm_put_blocking(pio0, dat_writer_slow.sm, ch);
-}
 
 static uint8_t Table[] = {
 	0x00, 0x87, 0x96, 0x11, 0xa5, 0x22, 0x33, 0xb4,0xb4, 0x33, 0x22, 0xa5, 0x11, 0x96, 0x87, 0x00,
@@ -303,37 +338,136 @@ static void __time_critical_func(generateResponse)() {
 }
 
 static void __time_critical_func(mc_main_loop)(void) {
+    bool next = false, exit = false;
     while (1) {
         uint8_t cmd, ch;
 
-NEXTCMD:
         while (!reset && !reset && !reset && !reset && !reset) {
             if (mc_exit_request)
                 goto EXIT_REQUEST;
         }
         reset = 0;
 
-        recvfirst();
+        //recvfirst();
+        switch (receiveFirst(&cmd)) {
+            case RECEIVE_EXIT:
+                exit = true;
+                break;
+            case RECEIVE_RESET:
+                next = true;
+                break;
+            default:
+                break;
+        }
+        if (next)
+            continue;
+        if (exit)
+            break;
 
         if (cmd == 0x81) {
-            void (*send)(uint8_t) = NULL;
-            if (probe_clock()) {
-                send =  &mc_respond_fast;
-//#define send mc_respond_fast
-//#include "ps2_memory_card.in.c"
-//#undef send
-            } else {
-                send =  &mc_respond_slow;
-//#define send mc_respond_slow
-//#undef send
-            }
 #include "ps2_memory_card.in.c"
+        } else if (cmd == 0x8A) {
+            if (ch == 0xA0) {
+        /* SD2PSXMAN Command */
+        int subcmd = cmd;
+        uint8_t game_id_length;
+        uint8_t input_buff[0xFF] = { 0 };
+        mc_respond(0xFF); receiveOrNextCmd
+    (&cmd);
+        debug_printf("SD2PSXMAN %02X -> %02X\n", ch, subcmd);
+        mc_respond(0x00); receiveOrNextCmd
+    (&cmd); // Accept command
+
+        switch(subcmd) {
+            case 0x20:  // Ping Command
+                mc_respond(0x01); receiveOrNextCmd
+            (&cmd); // Protocol version
+                mc_respond(0x01); receiveOrNextCmd
+            (&cmd); // Product ID - 1 == SD2PSX
+                mc_respond(0x27); receiveOrNextCmd
+            (&cmd); // SD2PSX is available
+                mc_respond(0xFF); receiveOrNextCmd
+            (&cmd); // Terminate
+                break;
+            case 0x21: // Game ID command
+                memset(received_game_id, 0, sizeof(received_game_id));
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd); // Accept command
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd); // Padding
+                game_id_length = cmd;
+                for (uint8_t i; (i < game_id_length) && (i < 0x10); i++) {
+                    receiveOrNextCmd
+                (&cmd); // Receive Game ID char by char
+                    input_buff[i] = cmd; 
+                    mc_respond(cmd);
+                }
+                game_names_extract_title_id(input_buff, received_game_id, game_id_length, sizeof(received_game_id));
+                break;
+            case 0x22: // Change Channel command
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd); // Accept command
+                subcmd = cmd;
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd);
+                
+                switch (subcmd) {
+                    case 0x00:
+    //                    ps2_cardman_set_channel(cmd); todo: Implement!
+                        break;
+                    case 0x01:
+                        ps2_cardman_next_channel();
+                        break;
+                    case 0x02:
+                        ps2_cardman_prev_channel();
+                        break;
+                    default:
+                        break;
+                }
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd);
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd);
+                mc_respond(0xFF);
+                break;
+            case 0x23: // Change Slot command
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd); // Accept command
+                subcmd = cmd;
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd);
+                
+                switch (subcmd) {
+                    case 0x00:
+    //                    ps2_cardman_set_idx(cmd); todo: Implement!
+                        break;
+                    case 0x01:
+                        ps2_cardman_next_idx();
+                        break;
+                    case 0x02:
+                        ps2_cardman_prev_idx();
+                        break;
+                    default:
+                        break;
+                }
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd);
+                mc_respond(0x00); receiveOrNextCmd
+            (&cmd);
+                mc_respond(0xFF);
+                break;
+            default:
+                break;
+
+        }
+        
+    } 
         } else {
             // not for us
             continue;
         }
-    }
 
+    }
 EXIT_REQUEST:
     mc_exit_response = 1;
 }
