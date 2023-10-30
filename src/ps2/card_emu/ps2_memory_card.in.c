@@ -27,11 +27,11 @@ if (ch == 0x11) {
         uint32_t addr;
     } raw;
     uint8_t ck;
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[0]);
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[1]);
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[2]);
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[3]);
-    mc_respond(0xFF); receiveOrNextCmd(&ck);
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[0] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[1] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[2] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[3] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); ck = cmd;
     mc_respond(0x2B); receiveOrNextCmd(&cmd);
     (void)ck; // TODO: validate checksum
     erase_sector = raw.addr;
@@ -43,11 +43,11 @@ if (ch == 0x11) {
         uint32_t addr;
     } raw;
     uint8_t ck;
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[0]);
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[1]);
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[2]);
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[3]);
-    mc_respond(0xFF); receiveOrNextCmd(&ck);
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[0] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[1] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[2] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[3] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); ck = cmd;
     mc_respond(0x2B); receiveOrNextCmd(&cmd);
     (void)ck; // TODO: validate checksum
     write_sector = raw.addr;
@@ -61,11 +61,11 @@ if (ch == 0x11) {
         uint32_t addr;
     } raw;
     uint8_t ck;
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[0]);
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[1]);
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[2]);
-    mc_respond(0xFF); receiveOrNextCmd(&raw.a[3]);
-    mc_respond(0xFF); receiveOrNextCmd(&ck);
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[0] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[1] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[2] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); raw.a[3] = cmd;
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); ck = cmd;
     mc_respond(0x2B); receiveOrNextCmd(&cmd);
     (void)ck; // TODO: validate checksum
     read_sector = raw.addr;
@@ -107,7 +107,7 @@ if (ch == 0x11) {
 } else if (ch == 0x27) {
     /* SET_TERMINATOR */
     mc_respond(0xFF);
-    receiveOrNextCmd(&term);
+    receiveOrNextCmd(&cmd); term = cmd;
     mc_respond(0x2B); receiveOrNextCmd(&cmd);
     mc_respond(term);
 } else if (ch == 0x28) {
@@ -118,7 +118,7 @@ if (ch == 0x11) {
 } else if (ch == 0x42) {
     /* write data */
     uint8_t sz;
-    mc_respond(0xFF); receiveOrNextCmd(&sz);
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); sz = cmd;
     mc_respond(0xFF);
 
 #ifdef DEBUG_MC_PROTOCOL
@@ -129,7 +129,7 @@ if (ch == 0x11) {
     uint8_t b;
 
     for (int i = 0; i < sz; ++i) {
-        receiveOrNextCmd(&b);
+        receiveOrNextCmd(&cmd); b = cmd;
         if (writeptr < sizeof(writetmp)) {
             writetmp[writeptr] = b;
             ++writeptr;
@@ -147,7 +147,7 @@ if (ch == 0x11) {
 } else if (ch == 0x43) {
     /* read data */
     uint8_t sz;
-    mc_respond(0xFF); receiveOrNextCmd(&sz);
+    mc_respond(0xFF); receiveOrNextCmd(&cmd); sz = cmd;
     mc_respond(0x2B); receiveOrNextCmd(&cmd);
 
 #ifdef DEBUG_MC_PROTOCOL
@@ -272,8 +272,8 @@ if (ch == 0x11) {
 } else if ((ch == 0xF0) && ps2_magicgate) {
     /* auth stuff */
     mc_respond(0xFF);
-    int subcmd;
-    receiveOrNextCmd(&subcmd);
+    receiveOrNextCmd(&cmd);
+    int subcmd = cmd;
     if (subcmd == 0) {
         /* probe support ? */
         mc_respond(0x2B); receiveOrNextCmd(&cmd);
@@ -334,21 +334,21 @@ if (ch == 0x11) {
     } else if (subcmd == 6) {
         /* MechaChallenge3 */
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge3[7]);
+        receiveOrNextCmd(&cmd); MechaChallenge3[7] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge3[6]);
+        receiveOrNextCmd(&cmd); MechaChallenge3[6] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge3[5]);
+        receiveOrNextCmd(&cmd); MechaChallenge3[5] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge3[4]);
+        receiveOrNextCmd(&cmd); MechaChallenge3[4] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge3[3]);
+        receiveOrNextCmd(&cmd); MechaChallenge3[3] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge3[2]);
+        receiveOrNextCmd(&cmd); MechaChallenge3[2] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge3[1]);
+        receiveOrNextCmd(&cmd); MechaChallenge3[1] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge3[0]);
+        receiveOrNextCmd(&cmd); MechaChallenge3[0] = cmd;
         /* TODO: checksum below */
         mc_respond(0xFF); receiveOrNextCmd(&cmd);
         mc_respond(0x2B); receiveOrNextCmd(&cmd);
@@ -358,21 +358,21 @@ if (ch == 0x11) {
     } else if (subcmd == 7) {
         /* MechaChallenge2 */
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge2[7]);
+        receiveOrNextCmd(&cmd); MechaChallenge2[7] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge2[6]);
+        receiveOrNextCmd(&cmd); MechaChallenge2[6] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge2[5]);
+        receiveOrNextCmd(&cmd); MechaChallenge2[5] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge2[4]);
+        receiveOrNextCmd(&cmd); MechaChallenge2[4] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge2[3]);
+        receiveOrNextCmd(&cmd); MechaChallenge2[3] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge2[2]);
+        receiveOrNextCmd(&cmd); MechaChallenge2[2] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge2[1]);
+        receiveOrNextCmd(&cmd); MechaChallenge2[1] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge2[0]);
+        receiveOrNextCmd(&cmd); MechaChallenge2[0] = cmd;
         /* TODO: checksum below */
         mc_respond(0xFF); receiveOrNextCmd(&cmd);
         mc_respond(0x2B); receiveOrNextCmd(&cmd);
@@ -394,21 +394,21 @@ if (ch == 0x11) {
     } else if (subcmd == 0xB) {
         /* MechaChallenge1 */
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge1[7]);
+        receiveOrNextCmd(&cmd); MechaChallenge1[7] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge1[6]);
+        receiveOrNextCmd(&cmd); MechaChallenge1[6] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge1[5]);
+        receiveOrNextCmd(&cmd); MechaChallenge1[5] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge1[4]);
+        receiveOrNextCmd(&cmd); MechaChallenge1[4] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge1[3]);
+        receiveOrNextCmd(&cmd); MechaChallenge1[3] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge1[2]);
+        receiveOrNextCmd(&cmd); MechaChallenge1[2] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge1[1]);
+        receiveOrNextCmd(&cmd); MechaChallenge1[1] = cmd;
         mc_respond(0xFF);
-        receiveOrNextCmd(&MechaChallenge1[0]);
+        receiveOrNextCmd(&cmd); MechaChallenge1[0] = cmd;
         /* TODO: checksum below */
         mc_respond(0xFF); receiveOrNextCmd(&cmd);
         mc_respond(0x2B); receiveOrNextCmd(&cmd);
@@ -486,10 +486,10 @@ if (ch == 0x11) {
         debug_printf("unknown %02X -> %02X\n", ch, subcmd);
     }
 } else if ((ch == 0xF1 || ch == 0xF2) && ps2_magicgate) {
-    int subcmd = cmd;
     /* session key encrypt */
     mc_respond(0xFF);
-    receiveOrNextCmd(&subcmd);
+    receiveOrNextCmd(&cmd);
+    int subcmd = cmd;
     if (subcmd == 0x50 || subcmd == 0x40) {
         mc_respond(0x2B); receiveOrNextCmd(&cmd);
         mc_respond(term);
@@ -497,7 +497,8 @@ if (ch == 0x11) {
         /* host mc_responds key to us */
         for (size_t i = 0; i < sizeof(hostkey); ++i) {
             mc_respond(0xFF);
-            receiveOrNextCmd(&hostkey[i]);
+            receiveOrNextCmd(&cmd);
+            hostkey[i] = cmd;
         }
         mc_respond(0x2B); receiveOrNextCmd(&cmd);
         mc_respond(term);

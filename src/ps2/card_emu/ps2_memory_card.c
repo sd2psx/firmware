@@ -1,29 +1,26 @@
+#include "../ps2_cardman.h"
+#include "../ps2_dirty.h"
+#include "../ps2_exploit.h"
+#include "../ps2_pio_qspi.h"
+#include "../ps2_psram.h"
+#include "config.h"
+#include "debug.h"
+#include "des.h"
+#include "flashmap.h"
+#include "game_names/game_names.h"
+#include "hardware/dma.h"
+#include "hardware/flash.h"
 #include "hardware/gpio.h"
 #include "hardware/regs/addressmap.h"
 #include "hardware/timer.h"
-#include "hardware/flash.h"
-#include "hardware/dma.h"
-#include "pico/platform.h"
-
-#include "config.h"
-#include "ps2_mc_spi.pio.h"
-#include "flashmap.h"
-#include "debug.h"
 #include "keystore.h"
-#include "des.h"
-
-#include "../ps2_dirty.h"
-#include "../ps2_psram.h"
-#include "../ps2_pio_qspi.h"
-#include "../ps2_cardman.h"
-#include "../ps2_exploit.h"
-
-#include "game_names/game_names.h"
+#include "pico/platform.h"
+#include "ps2_mc_spi.pio.h"
+// #include "ps2_mx4sio.pio.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-
 
 // #define DEBUG_MC_PROTOCOL
 
@@ -35,23 +32,19 @@ int ignore;
 uint8_t flag;
 bool flash_mode = false;
 
-static char received_game_id[0x10] = { 0 };
+static char received_game_id[0x10] = {0};
 
 typedef struct {
     uint32_t offset;
     uint32_t sm;
 } pio_t;
 
-enum {
-    RECEIVE_RESET,
-    RECEIVE_EXIT, 
-    RECEIVE_OK
-};
+enum { RECEIVE_RESET, RECEIVE_EXIT, RECEIVE_OK };
 
-pio_t cmd_reader, dat_writer,  clock_probe;
+pio_t cmd_reader, dat_writer, clock_probe;
 
 #define ERASE_SECTORS 16
-#define CARD_SIZE (8 * 1024 * 1024)
+#define CARD_SIZE     (8 * 1024 * 1024)
 
 uint8_t term = 0xFF;
 uint32_t read_sector, write_sector, erase_sector;
@@ -84,8 +77,7 @@ static inline void __time_critical_func(write_mc)(uint32_t addr, void *buf, size
 }
 
 static inline void __time_critical_func(RAM_pio_sm_drain_tx_fifo)(PIO pio, uint sm) {
-    uint instr = (pio->sm[sm].shiftctrl & PIO_SM0_SHIFTCTRL_AUTOPULL_BITS) ? pio_encode_out(pio_null, 32) :
-                 pio_encode_pull(false, false);
+    uint instr = (pio->sm[sm].shiftctrl & PIO_SM0_SHIFTCTRL_AUTOPULL_BITS) ? pio_encode_out(pio_null, 32) : pio_encode_pull(false, false);
     while (!pio_sm_is_tx_fifo_empty(pio, sm)) {
         pio_sm_exec(pio, sm, instr);
     }
@@ -129,7 +121,6 @@ static void __time_critical_func(init_pio)(void) {
     dat_writer.offset = pio_add_program(pio0, &dat_writer_program);
     dat_writer.sm = pio_claim_unused_sm(pio0, true);
 
-
     clock_probe.offset = pio_add_program(pio0, &clock_probe_program);
     clock_probe.sm = pio_claim_unused_sm(pio0, true);
 
@@ -144,125 +135,100 @@ static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask
     }
 }
 
-#define receiveOrNextCmd(cmd) if(receive(cmd)==RECEIVE_RESET) continue
-
-static inline __attribute__((always_inline)) uint8_t receive(uint8_t* cmd) {
-    while ( 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-    1) { 
-        if (reset) 
-            return RECEIVE_RESET; 
-    } 
+static inline __attribute__((always_inline)) uint8_t receive(uint8_t *cmd) {
+    while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) &&
+           pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 1) {
+        if (reset)
+            return RECEIVE_RESET;
+    }
     (*cmd) = (pio_sm_get(pio0, cmd_reader.sm) >> 24);
     return RECEIVE_OK;
 }
 
-#define recv() do { \
-    while ( \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-    1) { \
-        if (reset) \
-            goto NEXTCMD; \
-    } \
-    cmd = (uint8_t) (pio_sm_get(pio0, cmd_reader.sm) >> 24); \
-} while (0);
+#define recv()                                                                                                                                                 \
+    do {                                                                                                                                                       \
+        while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+               pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 1) {                                            \
+            if (reset)                                                                                                                                         \
+                goto NEXTCMD;                                                                                                                                  \
+        }                                                                                                                                                      \
+        cmd = (uint8_t)(pio_sm_get(pio0, cmd_reader.sm) >> 24);                                                                                                \
+    } while (0);
 
-static inline __attribute__((always_inline)) uint8_t receiveFirst(uint8_t* cmd) {
-    while ( 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 
-    1) { 
-        if (reset) 
+#define receiveOrNextCmd(cmd)          \
+    if (receive(cmd) == RECEIVE_RESET) \
+    continue
+
+static inline __attribute__((always_inline)) uint8_t receiveFirst(uint8_t *cmd) {
+    while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) &&
+           pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 1) {
+        if (reset)
             return RECEIVE_RESET;
         if (mc_exit_request)
             return RECEIVE_EXIT;
-    } 
+    }
     (*cmd) = (pio_sm_get(pio0, cmd_reader.sm) >> 24);
     return RECEIVE_OK;
 }
 
-#define recvfirst() do { \
-    while ( \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-        pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-    1) { \
-        if (reset) \
-            goto NEXTCMD; \
-        if (mc_exit_request) \
-            goto EXIT_REQUEST; \
-    } \
-    cmd = (uint8_t) (pio_sm_get(pio0, cmd_reader.sm) >> 24); \
-} while (0);
+#define recvfirst()                                                                                                                                            \
+    do {                                                                                                                                                       \
+        while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
+               pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 1) {                                            \
+            if (reset)                                                                                                                                         \
+                goto NEXTCMD;                                                                                                                                  \
+            if (mc_exit_request)                                                                                                                               \
+                goto EXIT_REQUEST;                                                                                                                             \
+        }                                                                                                                                                      \
+        cmd = (uint8_t)(pio_sm_get(pio0, cmd_reader.sm) >> 24);                                                                                                \
+    } while (0);
 
 static inline void __time_critical_func(mc_respond)(uint8_t ch) {
     pio_sm_put_blocking(pio0, dat_writer.sm, ch);
 }
 
-
 static uint8_t Table[] = {
-	0x00, 0x87, 0x96, 0x11, 0xa5, 0x22, 0x33, 0xb4,0xb4, 0x33, 0x22, 0xa5, 0x11, 0x96, 0x87, 0x00,
-	0xc3, 0x44, 0x55, 0xd2, 0x66, 0xe1, 0xf0, 0x77,0x77, 0xf0, 0xe1, 0x66, 0xd2, 0x55, 0x44, 0xc3,
-	0xd2, 0x55, 0x44, 0xc3, 0x77, 0xf0, 0xe1, 0x66,0x66, 0xe1, 0xf0, 0x77, 0xc3, 0x44, 0x55, 0xd2,
-	0x11, 0x96, 0x87, 0x00, 0xb4, 0x33, 0x22, 0xa5,0xa5, 0x22, 0x33, 0xb4, 0x00, 0x87, 0x96, 0x11,
-	0xe1, 0x66, 0x77, 0xf0, 0x44, 0xc3, 0xd2, 0x55,0x55, 0xd2, 0xc3, 0x44, 0xf0, 0x77, 0x66, 0xe1,
-	0x22, 0xa5, 0xb4, 0x33, 0x87, 0x00, 0x11, 0x96,0x96, 0x11, 0x00, 0x87, 0x33, 0xb4, 0xa5, 0x22,
-	0x33, 0xb4, 0xa5, 0x22, 0x96, 0x11, 0x00, 0x87,0x87, 0x00, 0x11, 0x96, 0x22, 0xa5, 0xb4, 0x33,
-	0xf0, 0x77, 0x66, 0xe1, 0x55, 0xd2, 0xc3, 0x44,0x44, 0xc3, 0xd2, 0x55, 0xe1, 0x66, 0x77, 0xf0,
-	0xf0, 0x77, 0x66, 0xe1, 0x55, 0xd2, 0xc3, 0x44,0x44, 0xc3, 0xd2, 0x55, 0xe1, 0x66, 0x77, 0xf0,
-	0x33, 0xb4, 0xa5, 0x22, 0x96, 0x11, 0x00, 0x87,0x87, 0x00, 0x11, 0x96, 0x22, 0xa5, 0xb4, 0x33,
-	0x22, 0xa5, 0xb4, 0x33, 0x87, 0x00, 0x11, 0x96,0x96, 0x11, 0x00, 0x87, 0x33, 0xb4, 0xa5, 0x22,
-	0xe1, 0x66, 0x77, 0xf0, 0x44, 0xc3, 0xd2, 0x55,0x55, 0xd2, 0xc3, 0x44, 0xf0, 0x77, 0x66, 0xe1,
-	0x11, 0x96, 0x87, 0x00, 0xb4, 0x33, 0x22, 0xa5,0xa5, 0x22, 0x33, 0xb4, 0x00, 0x87, 0x96, 0x11,
-	0xd2, 0x55, 0x44, 0xc3, 0x77, 0xf0, 0xe1, 0x66,0x66, 0xe1, 0xf0, 0x77, 0xc3, 0x44, 0x55, 0xd2,
-	0xc3, 0x44, 0x55, 0xd2, 0x66, 0xe1, 0xf0, 0x77,0x77, 0xf0, 0xe1, 0x66, 0xd2, 0x55, 0x44, 0xc3,
-	0x00, 0x87, 0x96, 0x11, 0xa5, 0x22, 0x33, 0xb4,0xb4, 0x33, 0x22, 0xa5, 0x11, 0x96, 0x87, 0x00
-};
+    0x00, 0x87, 0x96, 0x11, 0xa5, 0x22, 0x33, 0xb4, 0xb4, 0x33, 0x22, 0xa5, 0x11, 0x96, 0x87, 0x00, 0xc3, 0x44, 0x55, 0xd2, 0x66, 0xe1, 0xf0, 0x77, 0x77, 0xf0,
+    0xe1, 0x66, 0xd2, 0x55, 0x44, 0xc3, 0xd2, 0x55, 0x44, 0xc3, 0x77, 0xf0, 0xe1, 0x66, 0x66, 0xe1, 0xf0, 0x77, 0xc3, 0x44, 0x55, 0xd2, 0x11, 0x96, 0x87, 0x00,
+    0xb4, 0x33, 0x22, 0xa5, 0xa5, 0x22, 0x33, 0xb4, 0x00, 0x87, 0x96, 0x11, 0xe1, 0x66, 0x77, 0xf0, 0x44, 0xc3, 0xd2, 0x55, 0x55, 0xd2, 0xc3, 0x44, 0xf0, 0x77,
+    0x66, 0xe1, 0x22, 0xa5, 0xb4, 0x33, 0x87, 0x00, 0x11, 0x96, 0x96, 0x11, 0x00, 0x87, 0x33, 0xb4, 0xa5, 0x22, 0x33, 0xb4, 0xa5, 0x22, 0x96, 0x11, 0x00, 0x87,
+    0x87, 0x00, 0x11, 0x96, 0x22, 0xa5, 0xb4, 0x33, 0xf0, 0x77, 0x66, 0xe1, 0x55, 0xd2, 0xc3, 0x44, 0x44, 0xc3, 0xd2, 0x55, 0xe1, 0x66, 0x77, 0xf0, 0xf0, 0x77,
+    0x66, 0xe1, 0x55, 0xd2, 0xc3, 0x44, 0x44, 0xc3, 0xd2, 0x55, 0xe1, 0x66, 0x77, 0xf0, 0x33, 0xb4, 0xa5, 0x22, 0x96, 0x11, 0x00, 0x87, 0x87, 0x00, 0x11, 0x96,
+    0x22, 0xa5, 0xb4, 0x33, 0x22, 0xa5, 0xb4, 0x33, 0x87, 0x00, 0x11, 0x96, 0x96, 0x11, 0x00, 0x87, 0x33, 0xb4, 0xa5, 0x22, 0xe1, 0x66, 0x77, 0xf0, 0x44, 0xc3,
+    0xd2, 0x55, 0x55, 0xd2, 0xc3, 0x44, 0xf0, 0x77, 0x66, 0xe1, 0x11, 0x96, 0x87, 0x00, 0xb4, 0x33, 0x22, 0xa5, 0xa5, 0x22, 0x33, 0xb4, 0x00, 0x87, 0x96, 0x11,
+    0xd2, 0x55, 0x44, 0xc3, 0x77, 0xf0, 0xe1, 0x66, 0x66, 0xe1, 0xf0, 0x77, 0xc3, 0x44, 0x55, 0xd2, 0xc3, 0x44, 0x55, 0xd2, 0x66, 0xe1, 0xf0, 0x77, 0x77, 0xf0,
+    0xe1, 0x66, 0xd2, 0x55, 0x44, 0xc3, 0x00, 0x87, 0x96, 0x11, 0xa5, 0x22, 0x33, 0xb4, 0xb4, 0x33, 0x22, 0xa5, 0x11, 0x96, 0x87, 0x00};
 
-void calcECC(uint8_t *ecc, const uint8_t *data)
-{
-	int i, c;
+void calcECC(uint8_t *ecc, const uint8_t *data) {
+    int i, c;
 
-	ecc[0] = ecc[1] = ecc[2] = 0;
+    ecc[0] = ecc[1] = ecc[2] = 0;
 
-	for (i = 0 ; i < 0x80 ; i ++) {
-		c = Table[data[i]];
+    for (i = 0; i < 0x80; i++) {
+        c = Table[data[i]];
 
-		ecc[0] ^= c;
-		if (c & 0x80) {
-			ecc[1] ^= ~i;
-			ecc[2] ^= i;
-		}
-	}
-	ecc[0] = ~ecc[0];
-	ecc[0] &= 0x77;
+        ecc[0] ^= c;
+        if (c & 0x80) {
+            ecc[1] ^= ~i;
+            ecc[2] ^= i;
+        }
+    }
+    ecc[0] = ~ecc[0];
+    ecc[0] &= 0x77;
 
-	ecc[1] = ~ecc[1];
-	ecc[1] &= 0x7f;
+    ecc[1] = ~ecc[1];
+    ecc[1] &= 0x7f;
 
-	ecc[2] = ~ecc[2];
-	ecc[2] &= 0x7f;
+    ecc[2] = ~ecc[2];
+    ecc[2] &= 0x7f;
 
-	return;
+    return;
 }
 
 // keysource and key are self generated values
-uint8_t keysource[] = { 0xf5, 0x80, 0x95, 0x3c, 0x4c, 0x84, 0xa9, 0xc0 };
-uint8_t dex_key[16] = { 0x17, 0x39, 0xd3, 0xbc, 0xd0, 0x2c, 0x18, 0x07, 0x4b, 0x17, 0xf0, 0xea, 0xc4, 0x66, 0x30, 0xf9 };
-uint8_t cex_key[16] = { 0x06, 0x46, 0x7a, 0x6c, 0x5b, 0x9b, 0x82, 0x77, 0x0d, 0xdf, 0xe9, 0x7e, 0x24, 0x5b, 0x9f, 0xca };
+uint8_t keysource[] = {0xf5, 0x80, 0x95, 0x3c, 0x4c, 0x84, 0xa9, 0xc0};
+uint8_t dex_key[16] = {0x17, 0x39, 0xd3, 0xbc, 0xd0, 0x2c, 0x18, 0x07, 0x4b, 0x17, 0xf0, 0xea, 0xc4, 0x66, 0x30, 0xf9};
+uint8_t cex_key[16] = {0x06, 0x46, 0x7a, 0x6c, 0x5b, 0x9b, 0x82, 0x77, 0x0d, 0xdf, 0xe9, 0x7e, 0x24, 0x5b, 0x9f, 0xca};
 uint8_t *key = cex_key;
 
 static uint8_t iv[8];
@@ -275,72 +241,68 @@ static uint8_t CardResponse1[8];
 static uint8_t CardResponse2[8];
 static uint8_t CardResponse3[8];
 
-static void __time_critical_func(desEncrypt)(void *key, void *data)
-{
-	DesContext dc;
-	desInit(&dc, (uint8_t *) key, 8);
-	desEncryptBlock(&dc, (uint8_t *) data, (uint8_t *) data);
+static void __time_critical_func(desEncrypt)(void *key, void *data) {
+    DesContext dc;
+    desInit(&dc, (uint8_t *)key, 8);
+    desEncryptBlock(&dc, (uint8_t *)data, (uint8_t *)data);
 }
 
-static void __time_critical_func(desDecrypt)(void *key, void *data)
-{
-	DesContext dc;
-	desInit(&dc, (uint8_t *) key, 8);
-	desDecryptBlock(&dc, (uint8_t *) data, (uint8_t *) data);
+static void __time_critical_func(desDecrypt)(void *key, void *data) {
+    DesContext dc;
+    desInit(&dc, (uint8_t *)key, 8);
+    desDecryptBlock(&dc, (uint8_t *)data, (uint8_t *)data);
 }
 
-static void __time_critical_func(doubleDesEncrypt)(void *key, void *data)
-{
-	desEncrypt(key, data);
-	desDecrypt(&((uint8_t *) key)[8], data);
-	desEncrypt(key, data);
+static void __time_critical_func(doubleDesEncrypt)(void *key, void *data) {
+    desEncrypt(key, data);
+    desDecrypt(&((uint8_t *)key)[8], data);
+    desEncrypt(key, data);
 }
 
-static void __time_critical_func(doubleDesDecrypt)(void *key, void *data)
-{
-	desDecrypt(key, data);
-	desEncrypt(&((uint8_t *) key)[8], data);
-	desDecrypt(key, data);
+static void __time_critical_func(doubleDesDecrypt)(void *key, void *data) {
+    desDecrypt(key, data);
+    desEncrypt(&((uint8_t *)key)[8], data);
+    desDecrypt(key, data);
 }
 
-static void __time_critical_func(xor_bit)(const void* a, const void* b, void* Result, size_t Length) {
-	size_t i;
-	for (i = 0; i < Length; i++) {
-		((uint8_t*)Result)[i] = ((uint8_t*)a)[i] ^ ((uint8_t*)b)[i];
-	}
+static void __time_critical_func(xor_bit)(const void *a, const void *b, void *Result, size_t Length) {
+    size_t i;
+    for (i = 0; i < Length; i++) {
+        ((uint8_t *)Result)[i] = ((uint8_t *)a)[i] ^ ((uint8_t *)b)[i];
+    }
 }
 
 static void __time_critical_func(generateIvSeedNonce)() {
-	for (int i = 0; i < 8; i++) {
-		iv[i] = 0x42;
-		seed[i] = keysource[i] ^ iv[i];
-		nonce[i] = 0x42;
-	}
+    for (int i = 0; i < 8; i++) {
+        iv[i] = 0x42;
+        seed[i] = keysource[i] ^ iv[i];
+        nonce[i] = 0x42;
+    }
 }
 
 static void __time_critical_func(generateResponse)() {
-	doubleDesDecrypt(key, MechaChallenge1);
-	uint8_t random[8] = { 0 };
-	xor_bit(MechaChallenge1, ps2_civ, random, 8);
+    doubleDesDecrypt(key, MechaChallenge1);
+    uint8_t random[8] = {0};
+    xor_bit(MechaChallenge1, ps2_civ, random, 8);
 
-	// MechaChallenge2 and MechaChallenge3 let's the card verify the console
+    // MechaChallenge2 and MechaChallenge3 let's the card verify the console
 
-	xor_bit(nonce, ps2_civ, CardResponse1, 8);
+    xor_bit(nonce, ps2_civ, CardResponse1, 8);
 
-	doubleDesEncrypt(key, CardResponse1);
+    doubleDesEncrypt(key, CardResponse1);
 
-	xor_bit(random, CardResponse1, CardResponse2, 8);
-	doubleDesEncrypt(key, CardResponse2);
+    xor_bit(random, CardResponse1, CardResponse2, 8);
+    doubleDesEncrypt(key, CardResponse2);
 
-	uint8_t CardKey[] = { 'M', 'e', 'c', 'h', 'a', 'P', 'w', 'n' };
-	xor_bit(CardKey, CardResponse2, CardResponse3, 8);
-	doubleDesEncrypt(key, CardResponse3);
+    uint8_t CardKey[] = {'M', 'e', 'c', 'h', 'a', 'P', 'w', 'n'};
+    xor_bit(CardKey, CardResponse2, CardResponse3, 8);
+    doubleDesEncrypt(key, CardResponse3);
 }
 
 static void __time_critical_func(mc_main_loop)(void) {
-    bool next = false, exit = false;
     while (1) {
         uint8_t cmd, ch;
+    NEXTCMD:
 
         while (!reset && !reset && !reset && !reset && !reset) {
             if (mc_exit_request)
@@ -348,125 +310,103 @@ static void __time_critical_func(mc_main_loop)(void) {
         }
         reset = 0;
 
-        //recvfirst();
-        switch (receiveFirst(&cmd)) {
-            case RECEIVE_EXIT:
-                exit = true;
-                break;
-            case RECEIVE_RESET:
-                next = true;
-                break;
-            default:
-                break;
-        }
-        if (next)
-            continue;
-        if (exit)
+        // recvfirst();
+        uint8_t received = receiveFirst(&cmd);
+
+        if (received == RECEIVE_EXIT)
             break;
+        if (received == RECEIVE_RESET)
+            continue;
 
         if (cmd == 0x81) {
 #include "ps2_memory_card.in.c"
         } else if (cmd == 0x8A) {
-            if (ch == 0xA0) {
-        /* SD2PSXMAN Command */
-        int subcmd = cmd;
-        uint8_t game_id_length;
-        uint8_t input_buff[0xFF] = { 0 };
-        mc_respond(0xFF); receiveOrNextCmd
-    (&cmd);
-        debug_printf("SD2PSXMAN %02X -> %02X\n", ch, subcmd);
-        mc_respond(0x00); receiveOrNextCmd
-    (&cmd); // Accept command
+            mc_respond(0xFF); receiveOrNextCmd(&cmd);
 
-        switch(subcmd) {
-            case 0x20:  // Ping Command
-                mc_respond(0x01); receiveOrNextCmd
-            (&cmd); // Protocol version
-                mc_respond(0x01); receiveOrNextCmd
-            (&cmd); // Product ID - 1 == SD2PSX
-                mc_respond(0x27); receiveOrNextCmd
-            (&cmd); // SD2PSX is available
-                mc_respond(0xFF); receiveOrNextCmd
-            (&cmd); // Terminate
-                break;
-            case 0x21: // Game ID command
-                memset(received_game_id, 0, sizeof(received_game_id));
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd); // Accept command
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd); // Padding
-                game_id_length = cmd;
-                for (uint8_t i; (i < game_id_length) && (i < 0x10); i++) {
-                    receiveOrNextCmd
-                (&cmd); // Receive Game ID char by char
-                    input_buff[i] = cmd; 
-                    mc_respond(cmd);
-                }
-                game_names_extract_title_id(input_buff, received_game_id, game_id_length, sizeof(received_game_id));
-                break;
-            case 0x22: // Change Channel command
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd); // Accept command
-                subcmd = cmd;
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd);
-                
-                switch (subcmd) {
-                    case 0x00:
-    //                    ps2_cardman_set_channel(cmd); todo: Implement!
-                        break;
-                    case 0x01:
-                        ps2_cardman_next_channel();
-                        break;
-                    case 0x02:
-                        ps2_cardman_prev_channel();
-                        break;
-                    default:
-                        break;
-                }
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd);
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd);
+            if (cmd == 0xA0) {
+                /* SD2PSXMAN Command */
+                int subcmd = cmd;
+                uint8_t game_id_length;
+                uint8_t input_buff[0xFF] = {0};
                 mc_respond(0xFF);
-                break;
-            case 0x23: // Change Slot command
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd); // Accept command
-                subcmd = cmd;
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd);
-                
-                switch (subcmd) {
-                    case 0x00:
-    //                    ps2_cardman_set_idx(cmd); todo: Implement!
-                        break;
-                    case 0x01:
-                        ps2_cardman_next_idx();
-                        break;
-                    case 0x02:
-                        ps2_cardman_prev_idx();
-                        break;
-                    default:
-                        break;
-                }
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd);
-                mc_respond(0x00); receiveOrNextCmd
-            (&cmd);
-                mc_respond(0xFF);
-                break;
-            default:
-                break;
+                receiveOrNextCmd(&cmd);
+                debug_printf("SD2PSXMAN %02X -> %02X\n", cmd, subcmd);
+                mc_respond(0x00);
+                receiveOrNextCmd(&cmd);  // Accept command
 
-        }
-        
-    } 
+                switch (subcmd) {
+                    case 0x20:  // Ping Command
+                        mc_respond(0x01);
+                        receiveOrNextCmd(&cmd);  // Protocol version
+                        mc_respond(0x01);
+                        receiveOrNextCmd(&cmd);  // Product ID - 1 == SD2PSX
+                        mc_respond(0x27);
+                        receiveOrNextCmd(&cmd);  // SD2PSX is available
+                        mc_respond(0xFF);
+                        receiveOrNextCmd(&cmd);  // Terminate
+                        break;
+                    case 0x21:  // Game ID command
+                        memset(received_game_id, 0, sizeof(received_game_id));
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);  // Accept command
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);  // Padding
+                        game_id_length = cmd;
+                        for (uint8_t i = 0; (i < game_id_length) && (i < 0x10); i++) {
+                            receiveOrNextCmd(&input_buff[i]);  // Receive Game ID char by char
+                            mc_respond(input_buff[i]);
+                        }
+                        game_names_extract_title_id(input_buff, received_game_id, game_id_length, sizeof(received_game_id));
+                        break;
+                    case 0x22:  // Change Channel command
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);  // Accept command
+                        subcmd = cmd;
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);
+
+                        switch (subcmd) {
+                            case 0x00:
+                                //                    ps2_cardman_set_channel(cmd); todo: Implement!
+                                break;
+                            case 0x01: ps2_cardman_next_channel(); break;
+                            case 0x02: ps2_cardman_prev_channel(); break;
+                            default: break;
+                        }
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);
+                        mc_respond(0xFF);
+                        break;
+                    case 0x23:  // Change Slot command
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);  // Accept command
+                        subcmd = cmd;
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);
+
+                        switch (subcmd) {
+                            case 0x00:
+                                //                    ps2_cardman_set_idx(cmd); todo: Implement!
+                                break;
+                            case 0x01: ps2_cardman_next_idx(); break;
+                            case 0x02: ps2_cardman_prev_idx(); break;
+                            default: break;
+                        }
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);
+                        mc_respond(0x00);
+                        receiveOrNextCmd(&cmd);
+                        mc_respond(0xFF);
+                        break;
+                    default: break;
+                }
+            }
         } else {
             // not for us
             continue;
         }
-
     }
 EXIT_REQUEST:
     mc_exit_response = 1;
@@ -474,8 +414,7 @@ EXIT_REQUEST:
 
 static void __no_inline_not_in_flash_func(mc_main)(void) {
     while (1) {
-        while (!mc_enter_request)
-        {}
+        while (!mc_enter_request) {}
         mc_enter_response = 1;
 
         mc_main_loop();
@@ -493,10 +432,10 @@ static void __time_critical_func(RAM_gpio_default_irq_handler)(void) {
     uint core = get_core_num();
     gpio_irq_callback_t callback = callbacks[core];
     io_irq_ctrl_hw_t *irq_ctrl_base = core ? &iobank0_hw->proc1_irq_ctrl : &iobank0_hw->proc0_irq_ctrl;
-    for (uint gpio = 0; gpio < NUM_BANK0_GPIOS; gpio+=8) {
+    for (uint gpio = 0; gpio < NUM_BANK0_GPIOS; gpio += 8) {
         uint32_t events8 = irq_ctrl_base->ints[gpio >> 3u];
         // note we assume events8 is 0 for non-existent GPIO
-        for(uint i=gpio;events8 && i<gpio+8;i++) {
+        for (uint i = gpio; events8 && i < gpio + 8; i++) {
             uint32_t events = events8 & 0xfu;
             if (events) {
                 RAM_gpio_acknowledge_irq(i, events);
@@ -525,7 +464,8 @@ static void my_gpio_set_irq_callback(gpio_irq_callback_t callback) {
 static void my_gpio_set_irq_enabled_with_callback(uint gpio, uint32_t events, bool enabled, gpio_irq_callback_t callback) {
     gpio_set_irq_enabled(gpio, events, enabled);
     my_gpio_set_irq_callback(callback);
-    if (enabled) irq_set_enabled(IO_IRQ_BANK0, true);
+    if (enabled)
+        irq_set_enabled(IO_IRQ_BANK0, true);
 }
 
 void ps2_memory_card_main(void) {
@@ -549,8 +489,7 @@ void ps2_memory_card_exit(void) {
         return;
 
     mc_exit_request = 1;
-    while (!mc_exit_response)
-    {}
+    while (!mc_exit_response) {}
     mc_exit_request = mc_exit_response = 0;
     memcard_running = 0;
 }
@@ -562,8 +501,7 @@ void ps2_memory_card_enter(void) {
         return;
 
     mc_enter_request = 1;
-    while (!mc_enter_response)
-    {}
+    while (!mc_enter_response) {}
     mc_enter_request = mc_enter_response = 0;
     memcard_running = 1;
     flash_mode = false;
@@ -571,8 +509,7 @@ void ps2_memory_card_enter(void) {
 
 void ps2_memory_card_enter_flash(void) {
     mc_enter_request = 1;
-    while (!mc_enter_response)
-    {}
+    while (!mc_enter_response) {}
     mc_enter_request = mc_enter_response = 0;
     memcard_running = 1;
     flash_mode = true;
