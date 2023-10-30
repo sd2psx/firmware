@@ -302,12 +302,14 @@ static void __time_critical_func(generateResponse)() {
 static void __time_critical_func(mc_main_loop)(void) {
     while (1) {
         uint8_t cmd, ch;
-    NEXTCMD:
 
         while (!reset && !reset && !reset && !reset && !reset) {
-            if (mc_exit_request)
-                goto EXIT_REQUEST;
+            if (mc_exit_request) {
+                mc_exit_response = 1;
+                return;
+            }
         }
+
         reset = 0;
 
         // recvfirst();
@@ -408,8 +410,6 @@ static void __time_critical_func(mc_main_loop)(void) {
             continue;
         }
     }
-EXIT_REQUEST:
-    mc_exit_response = 1;
 }
 
 static void __no_inline_not_in_flash_func(mc_main)(void) {
