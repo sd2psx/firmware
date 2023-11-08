@@ -15,8 +15,10 @@
 #include "hardware/timer.h"
 #include "keystore.h"
 #include "pico/platform.h"
+#include "ps2_mc_auth.h"
+#include "ps2_mc_commands.h"
+#include "ps2_mc_internal.h"
 #include "ps2_mc_spi.pio.h"
-// #include "ps2_mx4sio.pio.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -26,10 +28,8 @@
 
 uint64_t us_startup;
 
-int byte_count;
 volatile int reset;
-int ignore;
-uint8_t flag;
+
 bool flash_mode = false;
 
 static char received_game_id[0x10] = {0};
@@ -39,27 +39,12 @@ typedef struct {
     uint32_t sm;
 } pio_t;
 
-enum { RECEIVE_RESET, RECEIVE_EXIT, RECEIVE_OK };
-
 pio_t cmd_reader, dat_writer, clock_probe;
-
-#define ERASE_SECTORS 16
-#define CARD_SIZE     (8 * 1024 * 1024)
-
 uint8_t term = 0xFF;
-uint32_t read_sector, write_sector, erase_sector;
-struct {
-    uint32_t prefix;
-    uint8_t buf[528];
-} readtmp;
-uint8_t *eccptr;
-uint8_t writetmp[528];
-int is_write, is_dma_read;
-uint32_t readptr, writeptr;
-static volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_enter_response;
-static uint8_t hostkey[9];
 
-static inline void __time_critical_func(read_mc)(uint32_t addr, void *buf, size_t sz) {
+static volatile int mc_exit_request, mc_exit_response, mc_enter_request, mc_enter_response;
+
+inline void __time_critical_func(read_mc)(uint32_t addr, void *buf, size_t sz) {
     if (flash_mode) {
         ps2_exploit_read(addr, buf, sz);
         ps2_dirty_unlock();
@@ -68,7 +53,7 @@ static inline void __time_critical_func(read_mc)(uint32_t addr, void *buf, size_
     }
 }
 
-static inline void __time_critical_func(write_mc)(uint32_t addr, void *buf, size_t sz) {
+inline void __time_critical_func(write_mc)(uint32_t addr, void *buf, size_t sz) {
     if (!flash_mode) {
         psram_write(addr, buf, sz);
     } else {
@@ -135,7 +120,7 @@ static void __time_critical_func(card_deselected)(uint gpio, uint32_t event_mask
     }
 }
 
-static inline __attribute__((always_inline)) uint8_t receive(uint8_t *cmd) {
+inline __attribute__((always_inline)) uint8_t receive(uint8_t *cmd) {
     while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) &&
            pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 1) {
         if (reset)
@@ -145,21 +130,7 @@ static inline __attribute__((always_inline)) uint8_t receive(uint8_t *cmd) {
     return RECEIVE_OK;
 }
 
-#define recv()                                                                                                                                                 \
-    do {                                                                                                                                                       \
-        while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-               pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 1) {                                            \
-            if (reset)                                                                                                                                         \
-                goto NEXTCMD;                                                                                                                                  \
-        }                                                                                                                                                      \
-        cmd = (uint8_t)(pio_sm_get(pio0, cmd_reader.sm) >> 24);                                                                                                \
-    } while (0);
-
-#define receiveOrNextCmd(cmd)          \
-    if (receive(cmd) == RECEIVE_RESET) \
-    continue
-
-static inline __attribute__((always_inline)) uint8_t receiveFirst(uint8_t *cmd) {
+inline __attribute__((always_inline)) uint8_t receiveFirst(uint8_t *cmd) {
     while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) &&
            pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 1) {
         if (reset)
@@ -171,23 +142,11 @@ static inline __attribute__((always_inline)) uint8_t receiveFirst(uint8_t *cmd) 
     return RECEIVE_OK;
 }
 
-#define recvfirst()                                                                                                                                            \
-    do {                                                                                                                                                       \
-        while (pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && \
-               pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && pio_sm_is_rx_fifo_empty(pio0, cmd_reader.sm) && 1) {                                            \
-            if (reset)                                                                                                                                         \
-                goto NEXTCMD;                                                                                                                                  \
-            if (mc_exit_request)                                                                                                                               \
-                goto EXIT_REQUEST;                                                                                                                             \
-        }                                                                                                                                                      \
-        cmd = (uint8_t)(pio_sm_get(pio0, cmd_reader.sm) >> 24);                                                                                                \
-    } while (0);
-
-static inline void __time_critical_func(mc_respond)(uint8_t ch) {
+inline void __time_critical_func(mc_respond)(uint8_t ch) {
     pio_sm_put_blocking(pio0, dat_writer.sm, ch);
 }
 
-static uint8_t Table[] = {
+uint8_t Table[] = {
     0x00, 0x87, 0x96, 0x11, 0xa5, 0x22, 0x33, 0xb4, 0xb4, 0x33, 0x22, 0xa5, 0x11, 0x96, 0x87, 0x00, 0xc3, 0x44, 0x55, 0xd2, 0x66, 0xe1, 0xf0, 0x77, 0x77, 0xf0,
     0xe1, 0x66, 0xd2, 0x55, 0x44, 0xc3, 0xd2, 0x55, 0x44, 0xc3, 0x77, 0xf0, 0xe1, 0x66, 0x66, 0xe1, 0xf0, 0x77, 0xc3, 0x44, 0x55, 0xd2, 0x11, 0x96, 0x87, 0x00,
     0xb4, 0x33, 0x22, 0xa5, 0xa5, 0x22, 0x33, 0xb4, 0x00, 0x87, 0x96, 0x11, 0xe1, 0x66, 0x77, 0xf0, 0x44, 0xc3, 0xd2, 0x55, 0x55, 0xd2, 0xc3, 0x44, 0xf0, 0x77,
@@ -225,83 +184,9 @@ void calcECC(uint8_t *ecc, const uint8_t *data) {
     return;
 }
 
-// keysource and key are self generated values
-uint8_t keysource[] = {0xf5, 0x80, 0x95, 0x3c, 0x4c, 0x84, 0xa9, 0xc0};
-uint8_t dex_key[16] = {0x17, 0x39, 0xd3, 0xbc, 0xd0, 0x2c, 0x18, 0x07, 0x4b, 0x17, 0xf0, 0xea, 0xc4, 0x66, 0x30, 0xf9};
-uint8_t cex_key[16] = {0x06, 0x46, 0x7a, 0x6c, 0x5b, 0x9b, 0x82, 0x77, 0x0d, 0xdf, 0xe9, 0x7e, 0x24, 0x5b, 0x9f, 0xca};
-uint8_t *key = cex_key;
-
-static uint8_t iv[8];
-static uint8_t seed[8];
-static uint8_t nonce[8];
-static uint8_t MechaChallenge3[8];
-static uint8_t MechaChallenge2[8];
-static uint8_t MechaChallenge1[8];
-static uint8_t CardResponse1[8];
-static uint8_t CardResponse2[8];
-static uint8_t CardResponse3[8];
-
-static void __time_critical_func(desEncrypt)(void *key, void *data) {
-    DesContext dc;
-    desInit(&dc, (uint8_t *)key, 8);
-    desEncryptBlock(&dc, (uint8_t *)data, (uint8_t *)data);
-}
-
-static void __time_critical_func(desDecrypt)(void *key, void *data) {
-    DesContext dc;
-    desInit(&dc, (uint8_t *)key, 8);
-    desDecryptBlock(&dc, (uint8_t *)data, (uint8_t *)data);
-}
-
-static void __time_critical_func(doubleDesEncrypt)(void *key, void *data) {
-    desEncrypt(key, data);
-    desDecrypt(&((uint8_t *)key)[8], data);
-    desEncrypt(key, data);
-}
-
-static void __time_critical_func(doubleDesDecrypt)(void *key, void *data) {
-    desDecrypt(key, data);
-    desEncrypt(&((uint8_t *)key)[8], data);
-    desDecrypt(key, data);
-}
-
-static void __time_critical_func(xor_bit)(const void *a, const void *b, void *Result, size_t Length) {
-    size_t i;
-    for (i = 0; i < Length; i++) {
-        ((uint8_t *)Result)[i] = ((uint8_t *)a)[i] ^ ((uint8_t *)b)[i];
-    }
-}
-
-static void __time_critical_func(generateIvSeedNonce)() {
-    for (int i = 0; i < 8; i++) {
-        iv[i] = 0x42;
-        seed[i] = keysource[i] ^ iv[i];
-        nonce[i] = 0x42;
-    }
-}
-
-static void __time_critical_func(generateResponse)() {
-    doubleDesDecrypt(key, MechaChallenge1);
-    uint8_t random[8] = {0};
-    xor_bit(MechaChallenge1, ps2_civ, random, 8);
-
-    // MechaChallenge2 and MechaChallenge3 let's the card verify the console
-
-    xor_bit(nonce, ps2_civ, CardResponse1, 8);
-
-    doubleDesEncrypt(key, CardResponse1);
-
-    xor_bit(random, CardResponse1, CardResponse2, 8);
-    doubleDesEncrypt(key, CardResponse2);
-
-    uint8_t CardKey[] = {'M', 'e', 'c', 'h', 'a', 'P', 'w', 'n'};
-    xor_bit(CardKey, CardResponse2, CardResponse3, 8);
-    doubleDesEncrypt(key, CardResponse3);
-}
-
 static void __time_critical_func(mc_main_loop)(void) {
     while (1) {
-        uint8_t cmd, ch;
+        uint8_t cmd = 0;
 
         while (!reset && !reset && !reset && !reset && !reset) {
             if (mc_exit_request) {
@@ -309,21 +194,53 @@ static void __time_critical_func(mc_main_loop)(void) {
                 return;
             }
         }
-
         reset = 0;
 
         // recvfirst();
         uint8_t received = receiveFirst(&cmd);
 
-        if (received == RECEIVE_EXIT)
+        if (received == RECEIVE_EXIT) {
+            mc_exit_response = 1;
             break;
+        }
         if (received == RECEIVE_RESET)
             continue;
 
         if (cmd == 0x81) {
-#include "ps2_memory_card.in.c"
+            /* resp to 0x81 */
+            mc_respond(0xFF);
+
+            /* sub cmd */
+            receiveOrNextCmd(&cmd);
+
+            switch (cmd) {
+                case PS2_SIO2_CMD_0x11: ps2_mc_cmd_0x11(); break;
+                case PS2_SIO2_CMD_0x12: ps2_mc_cmd_0x12(); break;
+                case PS2_SIO2_CMD_SET_ERASE_ADDRESS: ps2_mc_cmd_setEraseAddress(); break;
+                case PS2_SIO2_CMD_SET_WRITE_ADDRESS: ps2_mc_cmd_setWriteAddress(); break;
+                case PS2_SIO2_CMD_SET_READ_ADDRESS: ps2_mc_cmd_setReadAddress(); break;
+                case PS2_SIO2_CMD_GET_SPECS: ps2_mc_cmd_getSpecs(); break;
+                case PS2_SIO2_CMD_SET_TERMINATOR: ps2_mc_cmd_setTerminator(); break;
+                case PS2_SIO2_CMD_GET_TERMINATOR: ps2_mc_cmd_getTerminator(); break;
+                case PS2_SIO2_CMD_WRITE_DATA: ps2_mc_cmd_writeData(); break;
+                case PS2_SIO2_CMD_READ_DATA: ps2_mc_cmd_readData(); break;
+                case PS2_SIO2_CMD_COMMIT_DATA: ps2_mc_cmd_commitData(); break;
+                case PS2_SIO2_CMD_ERASE: ps2_mc_cmd_erase(); break;
+                case PS2_SIO2_CMD_BF: ps2_mc_cmd_0xBF(); break;
+                case PS2_SIO2_CMD_F3: ps2_mc_cmd_0xF3(); break;
+                case PS2_SIO2_CMD_KEY_SELECT: ps2_mc_cmd_keySelect(); break;
+                case PS2_SIO2_CMD_AUTH:
+                    if (ps2_magicgate)
+                        ps2_mc_auth();
+                    break;
+                case PS2_SIO2_CMD_SESSION_KEY_0:
+                case PS2_SIO2_CMD_SESSION_KEY_1: ps2_mc_sessionKeyEncr(); break;
+                default: debug_printf("Unknown Subcommand: %02x\n", cmd); break;
+            }
         } else if (cmd == 0x8A) {
-            mc_respond(0xFF); receiveOrNextCmd(&cmd);
+            /* Get sub-command for sd2psx */
+            mc_respond(0xFF);
+            receiveOrNextCmd(&cmd);
 
             if (cmd == 0xA0) {
                 /* SD2PSXMAN Command */
@@ -371,8 +288,12 @@ static void __time_critical_func(mc_main_loop)(void) {
                             case 0x00:
                                 //                    ps2_cardman_set_channel(cmd); todo: Implement!
                                 break;
-                            case 0x01: ps2_cardman_next_channel(); break;
-                            case 0x02: ps2_cardman_prev_channel(); break;
+                            case 0x01:
+                                // ps2_cardman_next_channel();  Implement logic!
+                                break;
+                            case 0x02:
+                                // ps2_cardman_prev_channel();  Implement logic!
+                                break;
                             default: break;
                         }
                         mc_respond(0x00);

@@ -6,6 +6,8 @@
 #define dirty_heap bigmem.ps2.dirty_heap
 #define dirty_map bigmem.ps2.dirty_map
 
+#include <hardware/sync.h>
+#include <pico/platform.h>
 #include <stdio.h>
 
 spin_lock_t *ps2_dirty_spin_lock;

@@ -1,6 +1,6 @@
 #include "ps2_cardman.h"
 
-#include <ps2/ps2_exploit.h>
+#include "ps2_exploit.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
