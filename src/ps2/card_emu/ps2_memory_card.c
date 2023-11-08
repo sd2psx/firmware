@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "ps2_sd2psxman_commands.h"
+
 // #define DEBUG_MC_PROTOCOL
 
 uint64_t us_startup;
@@ -206,7 +208,7 @@ static void __time_critical_func(mc_main_loop)(void) {
         if (received == RECEIVE_RESET)
             continue;
 
-        if (cmd == 0x81) {
+        if (cmd == PS2_SIO2_CMD_IDENTIFIER) {
             /* resp to 0x81 */
             mc_respond(0xFF);
 
@@ -237,94 +239,25 @@ static void __time_critical_func(mc_main_loop)(void) {
                 case PS2_SIO2_CMD_SESSION_KEY_1: ps2_mc_sessionKeyEncr(); break;
                 default: debug_printf("Unknown Subcommand: %02x\n", cmd); break;
             }
-        } else if (cmd == 0x8A) {
-            /* Get sub-command for sd2psx */
-            mc_respond(0xFF);
+        } else if (cmd == PS2_SD2PSXMAN_CMD_IDENTIFIER) {
+            /* resp to 0x8B */
+            mc_respond(0xAA);
+
+            /* sub cmd */
             receiveOrNextCmd(&cmd);
 
-            if (cmd == 0xA0) {
-                /* SD2PSXMAN Command */
-                int subcmd = cmd;
-                uint8_t game_id_length;
-                uint8_t input_buff[0xFF] = {0};
-                mc_respond(0xFF);
-                receiveOrNextCmd(&cmd);
-                debug_printf("SD2PSXMAN %02X -> %02X\n", cmd, subcmd);
-                mc_respond(0x00);
-                receiveOrNextCmd(&cmd);  // Accept command
-
-                switch (subcmd) {
-                    case 0x20:  // Ping Command
-                        mc_respond(0x01);
-                        receiveOrNextCmd(&cmd);  // Protocol version
-                        mc_respond(0x01);
-                        receiveOrNextCmd(&cmd);  // Product ID - 1 == SD2PSX
-                        mc_respond(0x27);
-                        receiveOrNextCmd(&cmd);  // SD2PSX is available
-                        mc_respond(0xFF);
-                        receiveOrNextCmd(&cmd);  // Terminate
-                        break;
-                    case 0x21:  // Game ID command
-                        memset(received_game_id, 0, sizeof(received_game_id));
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);  // Accept command
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);  // Padding
-                        game_id_length = cmd;
-                        for (uint8_t i = 0; (i < game_id_length) && (i < 0x10); i++) {
-                            receiveOrNextCmd(&input_buff[i]);  // Receive Game ID char by char
-                            mc_respond(input_buff[i]);
-                        }
-                        game_names_extract_title_id(input_buff, received_game_id, game_id_length, sizeof(received_game_id));
-                        break;
-                    case 0x22:  // Change Channel command
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);  // Accept command
-                        subcmd = cmd;
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);
-
-                        switch (subcmd) {
-                            case 0x00:
-                                //                    ps2_cardman_set_channel(cmd); todo: Implement!
-                                break;
-                            case 0x01:
-                                // ps2_cardman_next_channel();  Implement logic!
-                                break;
-                            case 0x02:
-                                // ps2_cardman_prev_channel();  Implement logic!
-                                break;
-                            default: break;
-                        }
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);
-                        mc_respond(0xFF);
-                        break;
-                    case 0x23:  // Change Slot command
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);  // Accept command
-                        subcmd = cmd;
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);
-
-                        switch (subcmd) {
-                            case 0x00:
-                                //                    ps2_cardman_set_idx(cmd); todo: Implement!
-                                break;
-                            case 0x01: ps2_cardman_next_idx(); break;
-                            case 0x02: ps2_cardman_prev_idx(); break;
-                            default: break;
-                        }
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);
-                        mc_respond(0x00);
-                        receiveOrNextCmd(&cmd);
-                        mc_respond(0xFF);
-                        break;
-                    default: break;
-                }
+            switch (cmd)
+            {
+                case SD2PSXMAN_PING: ps2_sd2psxman_ping(); break;
+                case SD2PSXMAN_GET_STATUS: ps2_sd2psxman_get_status(); break;
+                case SD2PSXMAN_GET_CARD: ps2_sd2psxman_get_card(); break;
+                case SD2PSXMAN_SET_CARD: ps2_sd2psxman_set_card(); break;
+                case SD2PSXMAN_GET_CHANNEL: ps2_sd2psxman_get_channel(); break;
+                case SD2PSXMAN_SET_CHANNEL: ps2_sd2psxman_set_channel(); break;
+                case SD2PSXMAN_GET_GAMEID: ps2_sd2psxman_get_gameid(); break;
+                case SD2PSXMAN_SET_GAMEID: ps2_sd2psxman_set_gameid(); break;
+            
+                default: debug_printf("Unknown Subcommand: %02x\n", cmd); break;
             }
         } else {
             // not for us
@@ -434,4 +367,14 @@ void ps2_memory_card_enter_flash(void) {
     mc_enter_request = mc_enter_response = 0;
     memcard_running = 1;
     flash_mode = true;
+}
+
+void ps2_memory_card_set_reset(void) {
+
+    /*Temp fix: When switching card / channels (via buttons or cmd) it's possible it 
+    * exits from recvfirst() with reset == 0. Upon re-entering mc_main_loop after
+    * completing the switch it will be stuck waiting for reset == 1, causing
+    * the next command to be dropped. To avoid this deselect must be invoked by
+    * issuing a dummy command, reinsterting the card, or reset must be manually set to 1 */
+    reset = 1;
 }

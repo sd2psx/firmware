@@ -1,5 +1,7 @@
 
 add_library(ps2_card STATIC
+                ${CMAKE_CURRENT_SOURCE_DIR}/card_emu/ps2_sd2psxman.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/card_emu/ps2_sd2psxman_commands.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/card_emu/ps2_memory_card.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/card_emu/ps2_mc_commands.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/card_emu/ps2_mc_auth.c

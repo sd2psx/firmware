@@ -28,6 +28,8 @@
 #include "ps2/ps2_psram.h"
 #include "ps2/ps2_exploit.h"
 
+#include "ps2/card_emu/ps2_sd2psxman.h"
+
 /* reboot to bootloader if either button is held on startup
    to make the device easier to flash when assembled inside case */
 static void check_bootloader_reset(void) {
@@ -130,6 +132,7 @@ int main() {
 
         while (1) {
             debug_task();
+            ps2_sd2psxman_task();
             ps2_dirty_task();
             gui_task();
             input_task();

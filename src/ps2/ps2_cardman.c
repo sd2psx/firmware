@@ -307,6 +307,18 @@ void ps2_cardman_close(void) {
     fd = -1;
 }
 
+void ps2_cardman_set_channel(uint16_t chan_num) {
+    if (card_idx != IDX_BOOT) {
+        if (chan_num <= CHAN_MAX && chan_num >= CHAN_MIN) {
+            card_chan = chan_num;
+        }
+    } else {
+        card_idx = settings_get_ps2_card();
+        card_chan = settings_get_ps2_channel();
+    }
+    snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
+}
+
 void ps2_cardman_next_channel(void) {
     if (card_idx != IDX_BOOT) {
         card_chan += 1;
@@ -329,6 +341,20 @@ void ps2_cardman_prev_channel(void) {
         card_chan = settings_get_ps2_channel();
     }
     snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
+}
+
+void ps2_cardman_set_idx(uint16_t idx_num) {
+    if (card_idx != IDX_BOOT) {
+        if (idx_num >= IDX_MIN && idx_num <= 0xFFFF) {
+            card_idx = idx_num;
+            card_chan = CHAN_MIN;
+        }
+    } else {
+        card_idx = settings_get_ps2_card();
+        card_chan = settings_get_ps2_channel();
+    }
+    snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
+
 }
 
 void ps2_cardman_next_idx(void) {
