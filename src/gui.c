@@ -791,7 +791,7 @@ void gui_task(void) {
         static int displayed_card_channel = -1;
         static char card_idx_s[8];
         static char card_channel_s[8];
-        if (displayed_card_idx != ps2_cardman_get_idx() || displayed_card_channel != ps2_cardman_get_channel()) {
+        if (displayed_card_idx != ps2_cardman_get_idx() || displayed_card_channel != ps2_cardman_get_channel() || refresh_gui) {
             displayed_card_idx = ps2_cardman_get_idx();
             displayed_card_channel = ps2_cardman_get_channel();
             folder_name = ps2_cardman_get_folder_name();
@@ -822,6 +822,8 @@ void gui_task(void) {
             }
 
             lv_label_set_text(scr_main_channel_lbl, card_channel_s);
+
+            refresh_gui = false;
         }
 
         if (switching_card && switching_card_timeout < time_us_64() && !input_is_any_down()) {

@@ -11,6 +11,8 @@
 #define SD2PSXMAN_GET_GAMEID 0x7
 #define SD2PSXMAN_SET_GAMEID 0x8
 
+#define SD2PSXMAN_UNMOUNT_BOOTCARD 0x30
+
 #define SD2PSXMAN_MODE_NUM 0x0
 #define SD2PSXMAN_MODE_NEXT 0x1
 #define SD2PSXMAN_MODE_PREV 0x2
@@ -23,3 +25,4 @@ extern void ps2_sd2psxman_get_channel(void);
 extern void ps2_sd2psxman_set_channel(void);
 extern void ps2_sd2psxman_get_gameid(void);
 extern void ps2_sd2psxman_set_gameid(void);
+extern void ps2_sd2psxman_unmount_bootcard(void);

@@ -51,10 +51,16 @@ void ps2_sd2psxman_task(void)
                 //TODO:
                 break;
 
+            case SD2PSXMAN_UNMOUNT_BOOTCARD:
+                if (ps2_cardman_get_idx() == 0) {
+                    ps2_cardman_next_idx();
+                }
+                break;
+
             default:
             break;
         }
-        
+
         if (prev_card != ps2_cardman_get_idx() || prev_chan != ps2_cardman_get_channel()) {
             //close old card
             ps2_memory_card_exit();
@@ -62,7 +68,7 @@ void ps2_sd2psxman_task(void)
 
             //open new card
             ps2_cardman_open();
-            ps2_memory_card_set_reset(); //temp fix
+            //ps2_memory_card_set_reset(); //temp fix
             ps2_memory_card_enter();
             gui_request_refresh();
         }

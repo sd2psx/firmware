@@ -119,3 +119,14 @@ inline __attribute__((always_inline)) void ps2_sd2psxman_set_gameid(void)
 
     debug_printf("received SD2PSXMAN_SET_GAMEID len %i, id: %s\n", gameid_len, sd2psxman_gameid);
 }
+
+inline __attribute__((always_inline)) void ps2_sd2psxman_unmount_bootcard(void)
+{
+    uint8_t cmd;
+    mc_respond(0x0); receiveOrNextCmd(&cmd); //reserved byte
+    mc_respond(term);
+
+    debug_printf("received SD2PSXMAN_UNMOUNT_BOOTCARD\n");
+
+    sd2psxman_cmd = SD2PSXMAN_UNMOUNT_BOOTCARD;
+}

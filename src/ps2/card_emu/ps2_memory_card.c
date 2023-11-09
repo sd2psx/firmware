@@ -256,7 +256,7 @@ static void __time_critical_func(mc_main_loop)(void) {
                 case SD2PSXMAN_SET_CHANNEL: ps2_sd2psxman_set_channel(); break;
                 case SD2PSXMAN_GET_GAMEID: ps2_sd2psxman_get_gameid(); break;
                 case SD2PSXMAN_SET_GAMEID: ps2_sd2psxman_set_gameid(); break;
-            
+                case SD2PSXMAN_UNMOUNT_BOOTCARD: ps2_sd2psxman_unmount_bootcard(); break;
                 default: debug_printf("Unknown Subcommand: %02x\n", cmd); break;
             }
         } else {
@@ -270,7 +270,8 @@ static void __no_inline_not_in_flash_func(mc_main)(void) {
     while (1) {
         while (!mc_enter_request) {}
         mc_enter_response = 1;
-
+        
+        reset_pio();
         mc_main_loop();
     }
 }
@@ -367,14 +368,4 @@ void ps2_memory_card_enter_flash(void) {
     mc_enter_request = mc_enter_response = 0;
     memcard_running = 1;
     flash_mode = true;
-}
-
-void ps2_memory_card_set_reset(void) {
-
-    /*Temp fix: When switching card / channels (via buttons or cmd) it's possible it 
-    * exits from recvfirst() with reset == 0. Upon re-entering mc_main_loop after
-    * completing the switch it will be stuck waiting for reset == 1, causing
-    * the next command to be dropped. To avoid this deselect must be invoked by
-    * issuing a dummy command, reinsterting the card, or reset must be manually set to 1 */
-    reset = 1;
 }
