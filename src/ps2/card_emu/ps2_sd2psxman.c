@@ -3,6 +3,7 @@
 #include "ps2/card_emu/ps2_memory_card.h"
 #include "ps2/card_emu/ps2_sd2psxman.h"
 #include "gui.h"
+#include "debug.h"
 
 #include "pico/time.h"
 #include "ps2/card_emu/ps2_sd2psxman_commands.h"
@@ -10,7 +11,7 @@
 volatile uint8_t sd2psxman_cmd;
 volatile uint8_t sd2psxman_mode;
 volatile uint16_t sd2psxman_cnum;
-char sd2psxman_gameid[251] = {'S', 'L', 'U', 'S', '-', '2', '0', '5', '5', '4', '\0'};
+char sd2psxman_gameid[251] = { 0x00 };
 
 void ps2_sd2psxman_task(void)
 {
@@ -68,7 +69,6 @@ void ps2_sd2psxman_task(void)
 
             //open new card
             ps2_cardman_open();
-            //ps2_memory_card_set_reset(); //temp fix
             ps2_memory_card_enter();
             gui_request_refresh();
         }
