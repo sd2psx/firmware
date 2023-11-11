@@ -17,8 +17,11 @@ int ps2_cardman_get_idx(void);
 int ps2_cardman_get_channel(void);
 uint32_t ps2_cardman_get_card_size(void);
 
+void ps2_cardman_set_channel(uint16_t num);
 void ps2_cardman_next_channel(void);
 void ps2_cardman_prev_channel(void);
+
+void ps2_cardman_set_idx(uint16_t num);
 void ps2_cardman_next_idx(void);
 void ps2_cardman_prev_idx(void);
 
