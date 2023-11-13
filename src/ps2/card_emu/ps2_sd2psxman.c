@@ -68,8 +68,8 @@ void ps2_sd2psxman_task(void)
             ps2_cardman_close();
 
             //open new card
-            ps2_cardman_open();
-            ps2_memory_card_enter();
+            gui_do_ps2_card_switch();
+            //ps2_memory_card_enter();
             gui_request_refresh();
         }
 
