@@ -75,6 +75,7 @@ def getGamesHDLBatchInstaller() -> ([], [], {}, int):
 
     r = requests.get(url, allow_redirects=True)
 
+
     if r.status_code == 200:
         lines = r.text.split("\n")
         csv_reader = csv.reader(lines, delimiter=";")

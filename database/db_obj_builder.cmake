@@ -2,7 +2,18 @@ string(TIMESTAMP date "%Y%m%d")
 
 if(NOT EXISTS "${OUTPUT_DIR}/gamedb${SYSTEM}_${date}.o")
 
-find_package (Python COMPONENTS Interpreter)
+find_package (Python3 COMPONENTS Interpreter)
+execute_process (COMMAND "${Python3_EXECUTABLE}" -m venv "${OUTPUT_DIR}/db_builder")
+
+# Here is the trick
+## update the environment with VIRTUAL_ENV variable (mimic the activate script)
+set (ENV{VIRTUAL_ENV} "${OUTPUT_DIR}/db_builder")
+## change the context of the search
+set (Python3_FIND_VIRTUALENV FIRST)
+## unset Python3_EXECUTABLE because it is also an input variable (see documentation, Artifacts Specification section)
+unset (Python3_EXECUTABLE)
+## Launch a new search
+find_package (Python3 COMPONENTS Interpreter Development)
 
 file(GLOB files "${OUTPUT_DIR}/gamedb${SYSTEM}_*")
 foreach(file ${files})
@@ -14,7 +25,12 @@ set(GAMEDB_${SYSTEM}_BIN "gamedb${SYSTEM}.dat")
 set(GAMEDB_${SYSTEM}_OBJ "${OUTPUT_DIR}/gamedb${SYSTEM}_${date}.o")
 
 execute_process(
-    COMMAND ${Python_EXECUTABLE} ${PYTHON_SCRIPT} ${SYSTEM} ${OUTPUT_DIR}
+    COMMAND ${Python3_EXECUTABLE} -m pip install requests unidecode
+    WORKING_DIRECTORY ${OUTPUT_DIR}
+    OUTPUT_QUIET
+)
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${PYTHON_SCRIPT} ${SYSTEM} ${OUTPUT_DIR}
     WORKING_DIRECTORY ${OUTPUT_DIR}
     OUTPUT_QUIET
 )
