@@ -20,10 +20,6 @@
 static uint8_t flushbuf[BLOCK_SIZE];
 static int fd = -1;
 
-#define IDX_MIN  1
-#define CHAN_MIN 1
-#define CHAN_MAX 8
-
 #define MAX_GAME_NAME_LENGTH (127)
 #define MAX_PREFIX_LENGTH    (4)
 #define MAX_GAME_ID_LENGTH   (16)
@@ -301,16 +297,9 @@ void ps2_cardman_prev_channel(void) {
 }
 
 void ps2_cardman_set_idx(uint16_t idx_num) {
-    if (PS2_CM_STATE_NORMAL == cardman_state) {
-        if ((idx_num >= IDX_MIN) && (idx_num <= UINT16_MAX)) {
-            card_idx = idx_num;
-            card_chan = CHAN_MIN;
-        }
-    } else if (PS2_CM_STATE_GAMEID == cardman_state) {
-    
-    } else {
-        card_idx = settings_get_ps2_card();
-        card_chan = settings_get_ps2_channel();
+    if ((idx_num >= IDX_MIN) && (idx_num <= UINT16_MAX)) {
+        card_idx = idx_num;
+        card_chan = CHAN_MIN;
     }
     snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
 }

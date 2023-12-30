@@ -35,8 +35,6 @@ static char folder_name[MAX_GAME_ID_LENGTH];
 void ps1_cardman_init(void) {
     card_idx = settings_get_ps1_card();
     card_chan = settings_get_ps1_channel();
-    if (card_chan < CHAN_MIN || card_chan > CHAN_MAX)
-        card_chan = CHAN_MIN;
     snprintf(folder_name, sizeof(folder_name), "Card%d", card_idx);
 
 }
