@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "ps2_sd2psxman_commands.h"
 
@@ -33,8 +34,6 @@ uint64_t us_startup;
 volatile int reset;
 
 bool flash_mode = false;
-
-static char received_game_id[0x10] = {0};
 
 typedef struct {
     uint32_t offset;
@@ -198,11 +197,11 @@ static void __time_critical_func(mc_main_loop)(void) {
         }
         reset = 0;
 
-        // recvfirst();
         uint8_t received = receiveFirst(&cmd);
 
         if (received == RECEIVE_EXIT) {
             mc_exit_response = 1;
+            printf("Received EXIT\n");
             break;
         }
         if (received == RECEIVE_RESET)
@@ -248,15 +247,15 @@ static void __time_critical_func(mc_main_loop)(void) {
 
             switch (cmd)
             {
-                case SD2PSXMAN_PING: ps2_sd2psxman_ping(); break;
-                case SD2PSXMAN_GET_STATUS: ps2_sd2psxman_get_status(); break;
-                case SD2PSXMAN_GET_CARD: ps2_sd2psxman_get_card(); break;
-                case SD2PSXMAN_SET_CARD: ps2_sd2psxman_set_card(); break;
-                case SD2PSXMAN_GET_CHANNEL: ps2_sd2psxman_get_channel(); break;
-                case SD2PSXMAN_SET_CHANNEL: ps2_sd2psxman_set_channel(); break;
-                case SD2PSXMAN_GET_GAMEID: ps2_sd2psxman_get_gameid(); break;
-                case SD2PSXMAN_SET_GAMEID: ps2_sd2psxman_set_gameid(); break;
-                case SD2PSXMAN_UNMOUNT_BOOTCARD: ps2_sd2psxman_unmount_bootcard(); break;
+                case SD2PSXMAN_PING: ps2_sd2psxman_cmds_ping(); break;
+                case SD2PSXMAN_GET_STATUS: ps2_sd2psxman_cmds_get_status(); break;
+                case SD2PSXMAN_GET_CARD: ps2_sd2psxman_cmds_get_card(); break;
+                case SD2PSXMAN_SET_CARD: ps2_sd2psxman_cmds_set_card(); break;
+                case SD2PSXMAN_GET_CHANNEL: ps2_sd2psxman_cmds_get_channel(); break;
+                case SD2PSXMAN_SET_CHANNEL: ps2_sd2psxman_cmds_set_channel(); break;
+                case SD2PSXMAN_GET_GAMEID: ps2_sd2psxman_cmds_get_gameid(); break;
+                case SD2PSXMAN_SET_GAMEID: ps2_sd2psxman_cmds_set_gameid(); break;
+                case SD2PSXMAN_UNMOUNT_BOOTCARD: ps2_sd2psxman_cmds_unmount_bootcard(); break;
                 default: debug_printf("Unknown Subcommand: %02x\n", cmd); break;
             }
         } else {
