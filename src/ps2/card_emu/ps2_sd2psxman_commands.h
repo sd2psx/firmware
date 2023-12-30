@@ -17,12 +17,12 @@
 #define SD2PSXMAN_MODE_NEXT 0x1
 #define SD2PSXMAN_MODE_PREV 0x2
 
-extern void ps2_sd2psxman_ping(void);
-extern void ps2_sd2psxman_get_status(void);
-extern void ps2_sd2psxman_get_card(void);
-extern void ps2_sd2psxman_set_card(void);
-extern void ps2_sd2psxman_get_channel(void);
-extern void ps2_sd2psxman_set_channel(void);
-extern void ps2_sd2psxman_get_gameid(void);
-extern void ps2_sd2psxman_set_gameid(void);
-extern void ps2_sd2psxman_unmount_bootcard(void);
+extern void ps2_sd2psxman_cmds_ping(void);
+extern void ps2_sd2psxman_cmds_get_status(void);
+extern void ps2_sd2psxman_cmds_get_card(void);
+extern void ps2_sd2psxman_cmds_set_card(void);
+extern void ps2_sd2psxman_cmds_get_channel(void);
+extern void ps2_sd2psxman_cmds_set_channel(void);
+extern void ps2_sd2psxman_cmds_get_gameid(void);
+extern void ps2_sd2psxman_cmds_set_gameid(void);
+extern void ps2_sd2psxman_cmds_unmount_bootcard(void);
