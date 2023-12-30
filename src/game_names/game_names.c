@@ -24,7 +24,7 @@
 #define MAX_PATH_LENGTH      (64)
 
 extern const char _binary_gamedbps1_dat_start, _binary_gamedbps1_dat_size;
-// extern const char _binary_gamedbps2_dat_start, _binary_gamedbps2_dat_size;
+extern const char _binary_gamedbps2_dat_start, _binary_gamedbps2_dat_size;
 
 typedef struct {
     size_t offset;
@@ -33,7 +33,7 @@ typedef struct {
     const char* name;
 } game_lookup;
 
-bool game_names_sanity_check_title_id(const char* const title_id) {
+bool __time_critical_func(game_names_sanity_check_title_id)(const char* const title_id) {
     uint8_t i = 0U;
 
     char splittable_game_id[MAX_GAME_ID_LENGTH];
@@ -131,11 +131,11 @@ static game_lookup find_game_lookup(const char* game_id) {
     char idString[10] = {};
     uint32_t numeric_id = 0, numeric_prefix = 0;
 
-    //    const char* const db_start = settings_get_mode() == MODE_PS1 ? &_binary_gamedbps1_dat_start : &_binary_gamedbps2_dat_start;
-    //    const char* const db_size = settings_get_mode() == MODE_PS1 ? &_binary_gamedbps1_dat_size : &_binary_gamedbps2_dat_size;
+    const char* const db_start = settings_get_mode() == MODE_PS1 ? &_binary_gamedbps1_dat_start : &_binary_gamedbps2_dat_start;
+    const char* const db_size = settings_get_mode() == MODE_PS1 ? &_binary_gamedbps1_dat_size : &_binary_gamedbps2_dat_size;
 
-    const char* const db_start = &_binary_gamedbps1_dat_start;
-    const size_t db_size = (size_t)&_binary_gamedbps1_dat_size;
+    //const char* const db_start = &_binary_gamedbps1_dat_start;
+    //const size_t db_size = (size_t)&_binary_gamedbps1_dat_size;
 
     uint32_t prefixOffset = 0;
     game_lookup ret = {
@@ -212,6 +212,7 @@ void __time_critical_func(game_names_extract_title_id)(const uint8_t* const in_t
 }
 
 void game_names_get_name_by_folder(const char* const folder, char* const game_name) {
+    strlcpy(game_name, "", MAX_GAME_NAME_LENGTH);    
     if (game_names_sanity_check_title_id(folder)) {
         game_lookup game;
 

@@ -5,7 +5,7 @@
 #include <pico/platform.h>
 
 void game_names_extract_title_id(const uint8_t* const in_title_id, char* const out_title_id, const size_t in_title_id_length, const size_t out_buffer_size);
-bool __time_critical_func(game_names_sanity_check_title_id)(const char* const title_id);
+bool game_names_sanity_check_title_id(const char* const title_id);
 
 void game_names_get_name_by_folder(const char* const folder, char* const game_name);
 void game_names_get_parent(const char* const game_id, char* const parent_id);
