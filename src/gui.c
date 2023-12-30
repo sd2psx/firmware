@@ -5,32 +5,28 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "lvgl.h"
 #include "input.h"
-#include "ui_menu.h"
 #include "keystore.h"
-#include "settings.h"
+#include "lvgl.h"
 #include "oled.h"
-
 #include "ps1/ps1_cardman.h"
-#include "ps1/ps1_odeman.h"
 #include "ps1/ps1_memory_card.h"
-
+#include "ps1/ps1_odeman.h"
 #include "ps2/card_emu/ps2_memory_card.h"
 #include "ps2/ps2_cardman.h"
 #include "ps2/ps2_dirty.h"
 #include "ps2/ps2_exploit.h"
-
-#include "version/version.h"
-
+#include "settings.h"
+#include "ui_menu.h"
 #include "ui_theme_mono.h"
+#include "version/version.h"
 
 /* Displays the line at the bottom for long pressing buttons */
 static lv_obj_t *g_navbar, *g_progress_bar, *g_progress_text, *g_activity_frame;
 
 static lv_obj_t *scr_switch_nag, *scr_card_switch, *scr_main, *scr_menu, *scr_freepsxboot, *menu, *main_page;
 static lv_style_t style_inv;
-static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl,*src_main_title_lbl, *lbl_civ_err, *lbl_autoboot, *lbl_channel;
+static lv_obj_t *scr_main_idx_lbl, *scr_main_channel_lbl, *src_main_title_lbl, *lbl_civ_err, *lbl_autoboot, *lbl_channel;
 
 static int have_oled;
 static int switching_card;
@@ -39,25 +35,25 @@ static int terminated;
 static bool refresh_gui;
 static bool installing_exploit;
 
-#define COLOR_FG      lv_color_white()
-#define COLOR_BG      lv_color_black()
+#define COLOR_FG lv_color_white()
+#define COLOR_BG lv_color_black()
 
-static lv_obj_t* ui_scr_create(void) {
-    lv_obj_t * obj = lv_obj_create(NULL);
+static lv_obj_t *ui_scr_create(void) {
+    lv_obj_t *obj = lv_obj_create(NULL);
     lv_obj_add_flag(obj, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_group_add_obj(lv_group_get_default(), obj);
     return obj;
 }
 
 /* create a navigatable UI menu container, so that the item (label) inside can be selected and clicked */
-static lv_obj_t* ui_menu_cont_create_nav(lv_obj_t *parent) {
-    lv_obj_t* cont = ui_menu_cont_create(parent);
+static lv_obj_t *ui_menu_cont_create_nav(lv_obj_t *parent) {
+    lv_obj_t *cont = ui_menu_cont_create(parent);
     lv_obj_add_flag(cont, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_group_add_obj(lv_group_get_default(), cont);
     return cont;
 }
 
-static lv_obj_t* ui_menu_subpage_create(lv_obj_t *menu, const char* title) {
+static lv_obj_t *ui_menu_subpage_create(lv_obj_t *menu, const char *title) {
     lv_obj_t *page = ui_menu_page_create(menu, title);
     lv_obj_add_flag(page, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_group_add_obj(lv_group_get_default(), page);
@@ -65,7 +61,7 @@ static lv_obj_t* ui_menu_subpage_create(lv_obj_t *menu, const char* title) {
     return page;
 }
 
-static lv_obj_t* ui_label_create(lv_obj_t *parent, const char *text) {
+static lv_obj_t *ui_label_create(lv_obj_t *parent, const char *text) {
     lv_obj_t *label = lv_label_create(parent);
     lv_label_set_text(label, text);
     return label;
@@ -78,7 +74,7 @@ static lv_obj_t *ui_label_create_at(lv_obj_t *parent, int x, int y, const char *
     return label;
 }
 
-static lv_obj_t* ui_label_create_grow(lv_obj_t *parent, const char *text) {
+static lv_obj_t *ui_label_create_grow(lv_obj_t *parent, const char *text) {
     lv_obj_t *label = ui_label_create(parent, text);
     lv_obj_set_flex_grow(label, 1);
     return label;
@@ -97,13 +93,13 @@ static void ui_make_scrollable(lv_obj_t *cont, lv_obj_t *label) {
     lv_obj_add_event_cb(cont, scrollable_label, LV_EVENT_DEFOCUSED, label);
 }
 
-static lv_obj_t* ui_label_create_grow_scroll(lv_obj_t *parent, const char *text) {
+static lv_obj_t *ui_label_create_grow_scroll(lv_obj_t *parent, const char *text) {
     lv_obj_t *label = ui_label_create_grow(parent, text);
     ui_make_scrollable(parent, label);
     return label;
 }
 
-static lv_obj_t* ui_header_create(lv_obj_t *parent, const char *text) {
+static lv_obj_t *ui_header_create(lv_obj_t *parent, const char *text) {
     lv_obj_t *lbl = lv_label_create(parent);
     lv_obj_set_align(lbl, LV_ALIGN_TOP_MID);
     lv_obj_add_style(lbl, &style_inv, 0);
@@ -117,8 +113,8 @@ static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t 
     if (have_oled) {
         oled_clear();
 
-        for(int y = area->y1; y <= area->y2; y++) {
-            for(int x = area->x1; x <= area->x2; x++) {
+        for (int y = area->y1; y <= area->y2; y++) {
+            for (int x = area->x1; x <= area->x2; x++) {
                 if (color_p->full)
                     oled_draw_pixel(x, y);
                 color_p++;
@@ -160,7 +156,7 @@ static void create_nav(void) {
     g_activity_frame = lv_line_create(lv_layer_top());
     lv_obj_add_style(g_activity_frame, &style_frame, 0);
 
-    static lv_point_t line_points[5] = { {0,0}, {DISPLAY_WIDTH,0}, {DISPLAY_WIDTH,DISPLAY_HEIGHT}, {0,DISPLAY_HEIGHT}, {0,0} };
+    static lv_point_t line_points[5] = {{0, 0}, {DISPLAY_WIDTH, 0}, {DISPLAY_WIDTH, DISPLAY_HEIGHT}, {0, DISPLAY_HEIGHT}, {0, 0}};
     lv_line_set_points(g_activity_frame, line_points, 5);
 
     lv_obj_add_flag(g_activity_frame, LV_OBJ_FLAG_HIDDEN);
@@ -181,10 +177,10 @@ static void gui_tick(void) {
 }
 
 static void reload_card_cb(int progress) {
-    static lv_point_t line_points[2] = { {0, DISPLAY_HEIGHT/2}, {0, DISPLAY_HEIGHT/2} };
+    static lv_point_t line_points[2] = {{0, DISPLAY_HEIGHT / 2}, {0, DISPLAY_HEIGHT / 2}};
     static int prev_progress;
     progress += 5;
-    if (progress/5 == prev_progress/5)
+    if (progress / 5 == prev_progress / 5)
         return;
     prev_progress = progress;
     line_points[1].x = DISPLAY_WIDTH * progress / 100;
@@ -216,20 +212,12 @@ static void evt_scr_main(lv_event_t *event) {
             if (settings_get_mode() == MODE_PS1) {
                 prevChannel = ps1_cardman_get_channel();
                 prevIdx = ps1_cardman_get_idx();
-                
+
                 switch (key) {
-                case INPUT_KEY_PREV:
-                    ps1_cardman_prev_channel();
-                    break;
-                case INPUT_KEY_NEXT:
-                    ps1_cardman_next_channel();
-                    break;
-                case INPUT_KEY_BACK:
-                    ps1_cardman_prev_idx();
-                    break;
-                case INPUT_KEY_ENTER:
-                    ps1_cardman_next_idx();
-                    break;
+                    case INPUT_KEY_PREV: ps1_cardman_prev_channel(); break;
+                    case INPUT_KEY_NEXT: ps1_cardman_next_channel(); break;
+                    case INPUT_KEY_BACK: ps1_cardman_prev_idx(); break;
+                    case INPUT_KEY_ENTER: ps1_cardman_next_idx(); break;
                 }
                 if ((prevChannel != ps1_cardman_get_channel()) || (prevIdx != ps1_cardman_get_idx())) {
                     ps1_memory_card_exit();
@@ -242,18 +230,10 @@ static void evt_scr_main(lv_event_t *event) {
                 prevIdx = ps2_cardman_get_idx();
 
                 switch (key) {
-                case INPUT_KEY_PREV:
-                    ps2_cardman_prev_channel();
-                    break;
-                case INPUT_KEY_NEXT:
-                    ps2_cardman_next_channel();
-                    break;
-                case INPUT_KEY_BACK:
-                    ps2_cardman_prev_idx();
-                    break;
-                case INPUT_KEY_ENTER:
-                    ps2_cardman_next_idx();
-                    break;
+                    case INPUT_KEY_PREV: ps2_cardman_prev_channel(); break;
+                    case INPUT_KEY_NEXT: ps2_cardman_next_channel(); break;
+                    case INPUT_KEY_BACK: ps2_cardman_prev_idx(); break;
+                    case INPUT_KEY_ENTER: ps2_cardman_next_idx(); break;
                 }
 
                 if ((prevChannel != ps2_cardman_get_channel()) || (prevIdx != ps2_cardman_get_idx())) {
@@ -268,7 +248,6 @@ static void evt_scr_main(lv_event_t *event) {
                 switching_card_timeout = time_us_64() + 1500 * 1000;
             }
         }
-
     }
 }
 
@@ -378,7 +357,6 @@ static void create_main_screen(void) {
             ui_header_create(scr_main, "PS2 Memory Card");
     }
 
-
     ui_label_create_at(scr_main, 0, 24, "Card");
 
     scr_main_idx_lbl = ui_label_create_at(scr_main, 0, 24, "");
@@ -468,7 +446,7 @@ static void create_cardswitch_screen(void) {
 
     g_progress_text = lv_label_create(scr_card_switch);
     lv_obj_set_align(g_progress_text, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_pos(g_progress_text, 0, DISPLAY_HEIGHT-9);
+    lv_obj_set_pos(g_progress_text, 0, DISPLAY_HEIGHT - 9);
     lv_label_set_text(g_progress_text, "Read XXX kB/s");
 }
 
@@ -639,7 +617,6 @@ static void create_menu_screen(void) {
         ui_label_create_grow_scroll(cont, "Info");
         ui_label_create(cont, ">");
         ui_menu_set_load_page_event(menu, cont, info_page);
-
     }
 
     ui_menu_set_page(menu, main_page);
@@ -708,8 +685,7 @@ void gui_init(void) {
     installing_exploit = false;
 }
 
-void gui_request_refresh(void)
-{
+void gui_request_refresh(void) {
     refresh_gui = true;
 }
 
@@ -744,7 +720,7 @@ void gui_task(void) {
     input_update_display(g_navbar);
 
     char card_name[127];
-    const char* folder_name = NULL;
+    const char *folder_name = NULL;
 
     if (settings_get_mode() == MODE_PS1) {
         static int displayed_card_idx = -1;
@@ -756,7 +732,7 @@ void gui_task(void) {
             displayed_card_idx = ps1_cardman_get_idx();
             displayed_card_channel = ps1_cardman_get_channel();
             folder_name = ps1_cardman_get_folder_name();
-            
+
             snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
 
             if (displayed_card_idx > 0) {
@@ -769,12 +745,9 @@ void gui_task(void) {
             memset(card_name, 0, sizeof(card_name));
             game_names_get_name_by_folder(folder_name, card_name);
 
-            if (card_name[0])
-            {
+            if (card_name[0]) {
                 lv_label_set_text(src_main_title_lbl, card_name);
-            }
-            else
-            {
+            } else {
                 lv_label_set_text(src_main_title_lbl, "");
             }
 
@@ -789,35 +762,39 @@ void gui_task(void) {
     } else {
         static int displayed_card_idx = -1;
         static int displayed_card_channel = -1;
+        static ps2_cardman_state_t cardman_state = PS2_CM_STATE_NORMAL;
         static char card_idx_s[8];
         static char card_channel_s[8];
-        if (displayed_card_idx != ps2_cardman_get_idx() || displayed_card_channel != ps2_cardman_get_channel() || refresh_gui) {
+        if (displayed_card_idx != ps2_cardman_get_idx() || displayed_card_channel != ps2_cardman_get_channel() || cardman_state != ps2_cardman_get_state() ||
+            refresh_gui) {
             displayed_card_idx = ps2_cardman_get_idx();
             displayed_card_channel = ps2_cardman_get_channel();
             folder_name = ps2_cardman_get_folder_name();
+            cardman_state = ps2_cardman_get_state();
 
-            if (displayed_card_idx == 0) {
+            if (PS2_CM_STATE_BOOT == cardman_state) {
                 snprintf(card_idx_s, sizeof(card_idx_s), "BOOT");
                 snprintf(card_channel_s, sizeof(card_channel_s), " ");
                 lv_label_set_text(lbl_channel, "");
-
+                lv_label_set_text(scr_main_idx_lbl, card_idx_s);
+            } else if (PS2_CM_STATE_GAMEID == cardman_state) {
+                lv_label_set_text(scr_main_idx_lbl, folder_name);
+                snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
+                lv_label_set_text(lbl_channel, "Channel");
+                lv_label_set_text(scr_main_idx_lbl, folder_name);
             } else {
                 snprintf(card_idx_s, sizeof(card_idx_s), "%d", displayed_card_idx);
                 snprintf(card_channel_s, sizeof(card_channel_s), "%d", displayed_card_channel);
                 lv_label_set_text(lbl_channel, "Channel");
+                lv_label_set_text(scr_main_idx_lbl, card_idx_s);
             }
-            lv_label_set_text(scr_main_idx_lbl, card_idx_s);
-
 
             memset(card_name, 0, sizeof(card_name));
             game_names_get_name_by_folder(folder_name, card_name);
 
-            if (card_name[0])
-            {
+            if (card_name[0]) {
                 lv_label_set_text(src_main_title_lbl, card_name);
-            }
-            else
-            {
+            } else {
                 lv_label_set_text(src_main_title_lbl, "");
             }
 
