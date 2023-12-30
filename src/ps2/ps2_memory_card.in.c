@@ -182,7 +182,7 @@ if (ch == 0x11) {
             send(b);
 
             if (readptr <= 512) {
-                uint8_t c = Table[b];
+                uint8_t c = EccTable[b];
                 eccptr[0] ^= c;
                 if (c & 0x80) {
                     eccptr[1] ^= ~(readptr & 0x7F);

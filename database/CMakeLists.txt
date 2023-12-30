@@ -14,6 +14,7 @@ add_custom_command(OUTPUT "${GAMEDB_PS1_OBJ}"
 
 add_custom_target(gamedbobjs DEPENDS "${GAMEDB_PS1_OBJ}")
 
+
 add_library(gamedb INTERFACE)
 add_dependencies(gamedb gamedbobjs)
 
