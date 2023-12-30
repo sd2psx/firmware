@@ -25,7 +25,7 @@ extern uint32_t readptr, writeptr;
 extern uint8_t *eccptr;
 extern bool flash_mode;
 
-extern uint8_t Table[];
+extern uint8_t EccTable[];
 
 extern uint8_t receive(uint8_t *cmd);
 extern uint8_t receiveFirst(uint8_t *cmd);
