@@ -226,6 +226,7 @@ static void evt_scr_main(lv_event_t *event) {
                     printf("new PS1 card=%d chan=%d\n", ps1_cardman_get_idx(), ps1_cardman_get_channel());
                 }
             } else {
+                ps2_cardman_state_t prevState = ps2_cardman_get_state();
                 prevChannel = ps2_cardman_get_channel();
                 prevIdx = ps2_cardman_get_idx();
 
@@ -236,7 +237,7 @@ static void evt_scr_main(lv_event_t *event) {
                     case INPUT_KEY_ENTER: ps2_cardman_next_idx(); break;
                 }
 
-                if ((prevChannel != ps2_cardman_get_channel()) || (prevIdx != ps2_cardman_get_idx())) {
+                if ((prevChannel != ps2_cardman_get_channel()) || (prevIdx != ps2_cardman_get_idx()) || (prevState != ps2_cardman_get_state())) {
                     ps2_memory_card_exit();
                     ps2_cardman_close();
                     switching_card = 1;
