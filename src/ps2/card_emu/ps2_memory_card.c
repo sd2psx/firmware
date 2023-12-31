@@ -1,17 +1,8 @@
-#include "../ps2_cardman.h"
 #include "../ps2_dirty.h"
 #include "../ps2_exploit.h"
-#include "../ps2_pio_qspi.h"
 #include "../ps2_psram.h"
-#include "config.h"
 #include "debug.h"
-#include "des.h"
-#include "flashmap.h"
-#include "game_names/game_names.h"
-#include "hardware/dma.h"
-#include "hardware/flash.h"
 #include "hardware/gpio.h"
-#include "hardware/regs/addressmap.h"
 #include "hardware/timer.h"
 #include "keystore.h"
 #include "pico/platform.h"
@@ -22,7 +13,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdio.h>
 
 #include "ps2_sd2psxman_commands.h"

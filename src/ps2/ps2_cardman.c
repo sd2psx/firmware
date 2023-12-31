@@ -5,11 +5,9 @@
 #include <string.h>
 
 #include "card_emu/ps2_sd2psxman.h"
-#include "card_emu/ps2_sd2psxman_commands.h"
 #include "debug.h"
 #include "game_names/game_names.h"
 #include "hardware/timer.h"
-#include "ps2_exploit.h"
 #include "ps2_psram.h"
 #include "sd.h"
 #include "settings.h"

@@ -1,14 +1,14 @@
 #include "ps2/card_emu/ps2_sd2psxman.h"
 
 #include <stdio.h>
-#include <string.h>
 
 #include "debug.h"
 #include "gui.h"
-#include "pico/time.h"
 #include "ps2/card_emu/ps2_memory_card.h"
 #include "ps2/card_emu/ps2_sd2psxman_commands.h"
 #include "ps2/ps2_cardman.h"
+
+#include "pico/platform.h"
 
 volatile uint8_t sd2psxman_cmd;
 volatile uint8_t sd2psxman_mode;

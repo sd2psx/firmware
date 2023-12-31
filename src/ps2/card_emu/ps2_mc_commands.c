@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "hardware/dma.h"
-#include "pico/platform.h"
 #include "ps2_cardman.h"
 #include "ps2_dirty.h"
 #include "ps2_mc_internal.h"

@@ -1,9 +1,7 @@
 #include <string.h>
 
 #include "ps2_cardman.h"
-#include "ps2_dirty.h"
 #include "ps2_mc_internal.h"
-#include "ps2_pio_qspi.h"
 
 #include "ps2_sd2psxman.h"
 #include "ps2_sd2psxman_commands.h"
