@@ -1,7 +1,6 @@
 
 #include "game_names.h"
 
-
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -73,11 +72,11 @@ static uint32_t game_names_char_array_to_uint32(const char in[4]) {
 #pragma GCC diagnostic pop
 
 static uint32_t game_names_find_prefix_offset(uint32_t numericPrefix, const char* const db_start) {
-    uint32_t offset = 0;
+    uint32_t offset = UINT32_MAX;
 
     const char* pointer = db_start;
 
-    while (offset == 0) {
+    while (offset == UINT32_MAX) {
         uint32_t currentprefix = game_names_char_array_to_uint32(pointer), currentoffset = game_names_char_array_to_uint32(&pointer[4]);
 
         if (currentprefix == numericPrefix) {
@@ -134,9 +133,6 @@ static game_lookup find_game_lookup(const char* game_id) {
     const char* const db_start = settings_get_mode() == MODE_PS1 ? &_binary_gamedbps1_dat_start : &_binary_gamedbps2_dat_start;
     const char* const db_size = settings_get_mode() == MODE_PS1 ? &_binary_gamedbps1_dat_size : &_binary_gamedbps2_dat_size;
 
-    //const char* const db_start = &_binary_gamedbps1_dat_start;
-    //const size_t db_size = (size_t)&_binary_gamedbps1_dat_size;
-
     uint32_t prefixOffset = 0;
     game_lookup ret = {
         .game_id = 0U,
@@ -174,7 +170,7 @@ static game_lookup find_game_lookup(const char* game_id) {
             uint32_t offset = prefixOffset;
             game_lookup game;
             do {
-                game = build_game_lookup(db_start, db_size, offset);
+                game = build_game_lookup(db_start, (size_t)db_size, offset);
 
                 if (game.game_id == numeric_id) {
                     ret = game;
@@ -280,6 +276,8 @@ void game_names_get_parent(const char* const game_id, char* const parent_id) {
         snprintf(parent_id, MAX_GAME_ID_LENGTH, "%s-%0*d", prefixString, (int)strlen(idString), (int)game.parent_id);
 
         debug_printf("Parent ID: %s\n", parent_id);
+    } else {
+        strlcpy(parent_id, game_id, MAX_GAME_ID_LENGTH);
     }
 }
 
