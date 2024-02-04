@@ -166,7 +166,7 @@ static game_lookup find_game_lookup(const char* game_id) {
         
         prefixOffset = game_names_find_prefix_offset(numeric_prefix, db_start);
 
-        if (prefixOffset < db_size) {
+        if (prefixOffset < (size_t)db_size) {
             uint32_t offset = prefixOffset;
             game_lookup game;
             do {
@@ -179,7 +179,7 @@ static game_lookup find_game_lookup(const char* game_id) {
 
                 }
                 offset += 12;
-            } while ((game.game_id != 0) && (offset < db_size) && (ret.game_id == 0));
+            } while ((game.game_id != 0) && (offset < (size_t)db_size) && (ret.game_id == 0));
         }
     }
 
