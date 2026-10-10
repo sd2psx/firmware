@@ -10,6 +10,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
+set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG" CACHE STRING "" FORCE)
+
+
 set(LV_CONF_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/lv_conf.h CACHE STRING "" FORCE)
 add_subdirectory(ext/lvgl EXCLUDE_FROM_ALL)
 
@@ -94,10 +99,9 @@ target_link_libraries(ssd1306 pico_stdlib hardware_i2c)
 target_compile_definitions(
     sd2psx PUBLIC
     PICO_XOSC_STARTUP_DELAY_MULTIPLIER=64
-    PICO_FLASH_SIZE_BYTES=16777216
+    PICO_FLASH_SIZE_BYTES=2097152
     USE_SPI_ARRAY_TRANSFER=1
 )
-
 target_compile_options(
     sd2psx PRIVATE
     -Wall -Wextra
